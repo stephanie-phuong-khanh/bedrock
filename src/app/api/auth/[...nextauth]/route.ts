@@ -1,8 +1,6 @@
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
-
-// Server-side token storage (in-memory)
-const tokens = new Map<string, { accessToken: string, refreshToken: string }>();
+import tokenStore from "../../../../lib/tokenStore";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -32,8 +30,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, account }: any) {
       if (account && user) {
+        console.log("JWT callback - storing tokens for user ID:", user.id);
         // Store tokens server-side only
-        tokens.set(user.id, {
+        tokenStore.setTokens(user.id, {
           accessToken: account.access_token,
           refreshToken: account.refresh_token
         });
@@ -58,7 +57,8 @@ export const authOptions: NextAuthOptions = {
 
 // Helper function to get tokens by user ID (for server-side use only)
 export function getUserTokens(userId: string) {
-  return tokens.get(userId);
+  console.log(`Attempting to get tokens for user ID: ${userId}`);
+  return tokenStore.getTokens(userId);
 }
 
 const handler = NextAuth(authOptions);

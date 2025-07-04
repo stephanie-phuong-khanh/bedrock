@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions, getUserTokens } from "../../auth/[...nextauth]/route";
+import tokenStore from "../../../../lib/tokenStore";
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch("https://api.coinbase.com/v2/accounts", {
       headers: {
         Authorization: `Bearer ${userTokens.accessToken}`,
-        "CB-VERSION": "2022-01-01",
+        "CB-VERSION": "2023-04-01",
       },
     });
     

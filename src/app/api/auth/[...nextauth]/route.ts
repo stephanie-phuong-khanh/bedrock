@@ -18,6 +18,8 @@ export const authOptions: NextAuthOptions = {
       },
       token: "https://api.coinbase.com/oauth/token",
       userinfo: "https://api.coinbase.com/v2/user",
+      // Custom callback URL to avoid using 'coinbase' in the path
+      callbackUrl: `${process.env.NEXTAUTH_URL}/api/auth/cb/crypto`,
       profile(profile: any) {
         return {
           id: profile.data.id,

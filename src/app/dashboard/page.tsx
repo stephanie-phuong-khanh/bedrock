@@ -124,13 +124,17 @@ export default function Dashboard() {
   const handleSendSubmit = async () => {
     if (!selectedAccount) return;
     
+    // Generate a transaction ID only if we don't already have one
+    // This ensures we use the same ID for both initial request and 2FA retry
+    const transactionId = sendStatus.transactionId || crypto.randomUUID();
+    
     setSendStatus({
       ...sendStatus,
       loading: true,
+      transactionId, // Store the transaction ID in state
     });
     
     try {
-      const transactionId = sendStatus.transactionId || crypto.randomUUID();
       
       const response = await fetch("/api/coinbase/send", {
         method: "POST",
@@ -156,13 +160,15 @@ export default function Dashboard() {
         console.warn("Error sending crypto:", data, "Status:", response.status);
         
         // Check if this is a 2FA required error (status 402)
-        if (response.status === 402 || data.requires2FA) {
-          console.log("2FA required, prompting user");
+        if (response.status === 402 || data.requires2FA || 
+            (data.errors && data.errors.some((e: { id: string }) => e.id === 'two_factor_required'))) {
+          console.log("2FA required, prompting user, preserving transaction ID:", transactionId);
           setSendStatus({
             ...sendStatus,
             loading: false,
             requires2FA: true,
-            error: "Two-factor authentication required"
+            error: "Two-factor authentication required",
+            transactionId: transactionId // Preserve the transaction ID for 2FA retry
           });
           return;
         }

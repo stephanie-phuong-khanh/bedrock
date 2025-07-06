@@ -47,13 +47,20 @@ export async function POST(request: NextRequest) {
     let headers: HeadersInit = {
       "Authorization": `Bearer ${userTokens.accessToken}`,
       "Content-Type": "application/json",
-      "CB-VERSION": "2023-04-01", // Use the latest API version
     };
     
     // Add 2FA token if present
     if (twoFactorToken) {
       console.log("Including 2FA token in request", twoFactorToken);
       headers["CB-2FA-TOKEN"] = twoFactorToken;
+      
+      // Add CB-VERSION header for all requests
+      headers["CB-VERSION"] = "2023-04-01";
+      
+      console.log("Using idempotency key for 2FA retry:", idem);
+    } else {
+      // Add CB-VERSION header for all requests
+      headers["CB-VERSION"] = "2023-04-01";
     }
 
     // Format the request body according to Coinbase API requirements

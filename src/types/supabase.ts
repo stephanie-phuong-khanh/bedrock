@@ -4,8 +4,8 @@ export interface Vendor {
   user_id: string;
   name: string;
   email: string;
-  wallet_address: string;
-  wallet_chain: string;
+  wallet_address: string | null;
+  wallet_chain: string | null;
   tax_file_url: string | null;
 }
 

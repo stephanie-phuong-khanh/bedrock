@@ -82,7 +82,6 @@ export default function VendorsTab() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet Address</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wallet Chain</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -90,20 +89,9 @@ export default function VendorsTab() {
                   <tr key={vendor.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{vendor.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {vendor.wallet_address.substring(0, 6)}...{vendor.wallet_address.substring(vendor.wallet_address.length - 4)}
+                      {vendor.wallet_address?.substring(0, 6)}...{vendor.wallet_address?.substring(vendor.wallet_address.length - 4)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.wallet_chain}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {vendor.tax_file_url ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Validated
-                        </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      )}
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -114,13 +102,13 @@ export default function VendorsTab() {
       
       {/* Side panel for adding new vendor */}
       <div 
-        className={`fixed inset-y-0 right-0 w-full md:w-1/2 lg:w-1/3 bg-white shadow-xl transform ${
+        className={`fixed inset-y-0 right-0 w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl transform ${
           isSidePanelOpen ? 'translate-x-0' : 'translate-x-full'
         } transition-transform duration-300 ease-in-out z-20`}
       >
-        <div className="h-full overflow-y-auto p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Add New Vendor</h2>
+        <div className="h-full overflow-y-auto p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-medium">Add New Vendor</h2>
             <button 
               onClick={() => setIsSidePanelOpen(false)}
               className="text-gray-500 hover:text-gray-700"

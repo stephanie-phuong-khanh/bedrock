@@ -13,14 +13,13 @@ interface VendorFormProps {
 export default function VendorForm({ onSuccess }: VendorFormProps) {
   const { data: session } = useSession() as { data: Session | null };
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
   const supabase = createClientComponentClient();
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     wallet_address: '',
-    wallet_chain: 'ethereum', // Default value
+    wallet_chain: '',
   });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -29,12 +28,6 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
       [e.target.name]: e.target.value
     });
   };
-  
-//   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     if (e.target.files && e.target.files[0]) {
-//       setFile(e.target.files[0]);
-//     }
-//   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,35 +40,14 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
     setIsSubmitting(true);
     
     try {
-      let taxFileUrl = null;
-      
-      // 1. Upload file if provided
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${session.user.id}/${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('vendor-tax-files')
-          .upload(fileName, file);
-          
-        if (uploadError) throw uploadError;
-        
-        // Get the public URL for the file
-        const { data: urlData } = supabase.storage
-          .from('vendor-tax-files')
-          .getPublicUrl(fileName);
-          
-        taxFileUrl = urlData.publicUrl;
-      }
-      
-      // 2. Insert vendor record
+      // Create vendor object with optional wallet fields
       const newVendor: NewVendor = {
         user_id: session.user.id,
         name: formData.name,
         email: formData.email,
-        wallet_address: formData.wallet_address,
-        wallet_chain: formData.wallet_chain,
-        tax_file_url: taxFileUrl,
+        wallet_address: formData.wallet_address || null,
+        wallet_chain: formData.wallet_chain || null,
+        tax_file_url: null,
       };
       
       console.log('NEW VENDOR:', newVendor);
@@ -86,14 +58,13 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
         
       if (error) throw error;
       
-      // 3. Reset form and show success
+      // Reset form and show success
       setFormData({
         name: '',
         email: '',
         wallet_address: '',
-        wallet_chain: 'ethereum',
+        wallet_chain: '',
       });
-      setFile(null);
       
       // Call the onSuccess callback if provided
       if (onSuccess) {
@@ -111,9 +82,9 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
   };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-8">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-gray-700 mb-2">
           Vendor Name *
         </label>
         <input
@@ -122,12 +93,12 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
           value={formData.name}
           onChange={handleChange}
           required
-          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+          className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-gray-700 mb-2">
           Email *
         </label>
         <input
@@ -136,85 +107,41 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
           value={formData.email}
           onChange={handleChange}
           required
-          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+          className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
         />
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Wallet Address *
-        </label>
-        <input
-          type="text"
-          name="wallet_address"
-          value={formData.wallet_address}
-          onChange={handleChange}
-          required
-          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Wallet Chain *
-        </label>
-        <select
-          name="wallet_chain"
-          value={formData.wallet_chain}
-          onChange={handleChange}
-          required
-          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
-        >
-          <option value="ethereum">Ethereum</option>
-          <option value="polygon">Polygon</option>
-          <option value="arbitrum">Arbitrum</option>
-          <option value="optimism">Optimism</option>
-          <option value="base">Base</option>
-        </select>
-      </div>
-      
-      {/* <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Tax Form (Optional)
-        </label>
-        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-gray-50">
-          <div className="space-y-1 text-center">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 48 48"
-              aria-hidden="true"
-            >
-              <path
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <div className="flex text-sm text-gray-600">
-              <label
-                htmlFor="file-upload"
-                className="relative cursor-pointer rounded-md font-medium text-gray-600 hover:text-gray-500"
-              >
-                <span>Drag and drop your file here, or browse files</span>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  className="sr-only"
-                  onChange={handleFileChange}
-                  accept=".pdf"
-                />
-              </label>
-            </div>
-            <p className="text-xs text-gray-500">PDF files only</p>
-          </div>
+      <div className="mt-8">
+        <h3 className="font-medium text-gray-700 mb-4">Preferred Wallet</h3>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">
+            Wallet Address
+          </label>
+          <input
+            type="text"
+            name="wallet_address"
+            value={formData.wallet_address}
+            onChange={handleChange}
+            className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
+          />
         </div>
-      </div> */}
+        
+        <div>
+          <label className="block text-gray-700 mb-2">
+            Wallet Chain
+          </label>
+          <input
+            type="text"
+            name="wallet_chain"
+            value={formData.wallet_chain}
+            onChange={handleChange}
+            className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
+          />
+        </div>
+      </div>
       
-      <div className="flex justify-end mt-8">
+      <div className="flex justify-end mt-12">
         <button
           type="submit"
           disabled={isSubmitting}

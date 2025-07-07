@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
+import PaymentTab from './PaymentTab';
 
 export default function DashboardView() {
   const { data: session } = useSession();
@@ -63,7 +64,7 @@ export default function DashboardView() {
           
           {activeTab === 'payment' && (
             <div className="min-h-[400px]">
-              {/* Payment form will go here */}
+              <PaymentTab />
             </div>
           )}
           

@@ -1,6 +1,6 @@
-import NextAuth from "next-auth"
+import NextAuth from "next-auth/next"
 import GoogleProvider from "next-auth/providers/google"
-import { supabase } from "@/lib/supabase"
+import { SupabaseUser } from "next-auth"
 import { supabaseAdmin } from "@/lib/supabase-admin"
 
 const handler = NextAuth({
@@ -11,7 +11,7 @@ const handler = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (!user.email) {
         return false;
       }
@@ -55,7 +55,7 @@ const handler = NextAuth({
         return false;
       }
     },
-    async session({ session, token }) {
+    async session({ session }) {
       if (session?.user?.email) {
         // Get user data from Supabase to enrich the session - use admin client to bypass RLS
         const { data: userData } = await supabaseAdmin
@@ -66,8 +66,8 @@ const handler = NextAuth({
 
         if (userData) {
           // Add custom user data to the session
-          session.user.id = userData.id;
-          session.user.supabaseUser = userData;
+          (session.user as { id?: string }).id = userData.id;
+          (session.user as { supabaseUser?: SupabaseUser }).supabaseUser = userData;
         }
       }
       return session;

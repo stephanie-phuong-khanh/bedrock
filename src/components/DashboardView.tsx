@@ -29,7 +29,7 @@ export default function DashboardView() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h2 className="text-xl font-semibold mb-4">Account Overview</h2>
-          <p className="text-gray-600">Welcome to your dashboard! This is where you'll see your transaction history and account information.</p>
+          <p className="text-gray-600">Welcome to your dashboard!</p>
         </div>
         
         {/* Transaction History */}

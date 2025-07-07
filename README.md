@@ -53,7 +53,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ### Deployment Process
 
 1. **Environment Variables**: Already configured in Vercel project settings
-   - No need to set up production environment variables locally
+   - Set up production environment variables locally by copying the content of Settings > Environment Variables and pasting it into an `.env` file.
 
 2. **Continuous Deployment**:
    - Pushing to the `main` branch automatically triggers deployment

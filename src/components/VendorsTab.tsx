@@ -24,6 +24,9 @@ export default function VendorsTab() {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [currentVendor, setCurrentVendor] = useState<Vendor | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const supabase = createClientComponentClient();
   
   const loadVendors = useCallback(async () => {
@@ -62,6 +65,41 @@ export default function VendorsTab() {
     setIsSidePanelOpen(true);
   };
   
+  const handleDeleteClick = (vendor: Vendor) => {
+    setVendorToDelete(vendor);
+    setShowDeleteConfirm(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (!vendorToDelete || !session?.user?.id) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('vendors')
+        .delete()
+        .eq('id', vendorToDelete.id)
+        .eq('user_id', session.user.id); // Security check
+        
+      if (error) throw error;
+      
+      // Refresh the vendors list
+      loadVendors();
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+      alert('Failed to delete vendor. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      setVendorToDelete(null);
+    }
+  };
+  
+  const handleDeleteCancel = () => {
+    setShowDeleteConfirm(false);
+    setVendorToDelete(null);
+  };
+  
   if (isLoading) {
     return <div className="text-center py-4">Loading vendors...</div>;
   }
@@ -86,72 +124,95 @@ export default function VendorsTab() {
           </div>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 border-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Preferred Wallet Address</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Chain</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                    Vendor
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Preferred Wallet Address
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Chain
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {vendors.map((vendor) => (
-                  <tr key={vendor.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
-                      <div className="text-sm text-gray-500">{vendor.email}</div>
+                {vendors.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                      No vendors found. Add your first vendor to get started.
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {vendor.wallet_address ? (
-                        <div className="flex items-center">
-                          <span>
-                            {vendor.wallet_address.substring(0, 6)}...{vendor.wallet_address.substring(vendor.wallet_address.length - 4)}
+                  </tr>
+                ) : (
+                  vendors.map((vendor) => (
+                    <tr key={vendor.id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
+                        <div className="text-sm text-gray-500">{vendor.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {vendor.wallet_address ? (
+                          <div className="flex items-center">
+                            <span className="text-sm text-gray-900">
+                              {`${vendor.wallet_address.substring(0, 6)}...${vendor.wallet_address.substring(vendor.wallet_address.length - 4)}`}
+                            </span>
+                            <button 
+                              className="ml-2 text-gray-400 hover:text-gray-600"
+                              onClick={() => {
+                                if (vendor.wallet_address) {
+                                  navigator.clipboard.writeText(vendor.wallet_address);
+                                }
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">Not set</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {vendor.wallet_chain ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            {vendor.wallet_chain}
                           </span>
-                          <button className="ml-2 text-gray-400 hover:text-gray-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        ) : (
+                          <span className="text-sm text-gray-500">Not set</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end">
+                          <button 
+                            className="text-gray-400 hover:text-gray-600 mr-3"
+                            onClick={() => handleEditVendor(vendor)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                          <button 
+                            className="text-gray-400 hover:text-red-600"
+                            onClick={() => handleDeleteClick(vendor)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
                           </button>
                         </div>
-                      ) : (
-                        <span className="text-gray-400">Not set</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {vendor.wallet_chain ? (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                          {vendor.wallet_chain}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end">
-                        <button 
-                          className="text-gray-400 hover:text-gray-600 mr-3"
-                          onClick={() => handleEditVendor(vendor)}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                          </svg>
-                        </button>
-                        <button 
-                          className="text-gray-400 hover:text-red-600"
-                          onClick={() => {/* Delete vendor logic */}}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -200,6 +261,36 @@ export default function VendorsTab() {
           className="fixed inset-0 bg-black/85 z-10"
           onClick={() => setIsSidePanelOpen(false)}
         />
+      )}
+      
+      {/* Delete confirmation modal */}
+      {showDeleteConfirm && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-30" onClick={handleDeleteCancel} />
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-xl z-40 w-full max-w-md">
+            <h3 className="text-xl font-medium mb-4">Confirm Deletion</h3>
+            <p className="mb-6">
+              Are you sure you want to delete vendor <span className="font-medium">{vendorToDelete?.name}</span>? 
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

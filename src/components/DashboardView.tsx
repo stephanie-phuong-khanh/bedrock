@@ -3,6 +3,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { useState } from 'react';
 import Image from 'next/image';
+import VendorsTab from './VendorsTab';
 
 export default function DashboardView() {
   const { data: session } = useSession();
@@ -68,7 +69,7 @@ export default function DashboardView() {
           
           {activeTab === 'vendors' && (
             <div className="min-h-[400px]">
-              {/* Vendor list will go here */}
+              <VendorsTab />
             </div>
           )}
         </div>
@@ -99,11 +100,11 @@ export default function DashboardView() {
         {showUserMenu && (
           <div className="absolute bottom-12 left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
             <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium text-gray-900">{session?.user?.name}</p>
+              <p className="text-sm font-medium">{session?.user?.name}</p>
               <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut()}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
               Sign out

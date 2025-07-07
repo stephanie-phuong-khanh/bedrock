@@ -30,11 +30,11 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
     });
   };
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
+//   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     if (e.target.files && e.target.files[0]) {
+//       setFile(e.target.files[0]);
+//     }
+//   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +78,8 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
         tax_file_url: taxFileUrl,
       };
       
+      console.log('NEW VENDOR:', newVendor);
+
       const { error } = await supabase
         .from('vendors')
         .insert([newVendor]);
@@ -111,91 +113,114 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Vendor Name *
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
         </label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+        />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Email Address *
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Email *
         </label>
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+        />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           Wallet Address *
-          <input
-            type="text"
-            name="wallet_address"
-            value={formData.wallet_address}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
         </label>
+        <input
+          type="text"
+          name="wallet_address"
+          value={formData.wallet_address}
+          onChange={handleChange}
+          required
+          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+        />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Blockchain *
-          <select
-            name="wallet_chain"
-            value={formData.wallet_chain}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="ethereum">Ethereum</option>
-            <option value="polygon">Polygon</option>
-            <option value="arbitrum">Arbitrum</option>
-            <option value="optimism">Optimism</option>
-            <option value="base">Base</option>
-          </select>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Wallet Chain *
         </label>
+        <select
+          name="wallet_chain"
+          value={formData.wallet_chain}
+          onChange={handleChange}
+          required
+          className="block w-full px-3 py-2 border-b border-gray-300 focus:border-gray-900 focus:outline-none bg-transparent"
+        >
+          <option value="ethereum">Ethereum</option>
+          <option value="polygon">Polygon</option>
+          <option value="arbitrum">Arbitrum</option>
+          <option value="optimism">Optimism</option>
+          <option value="base">Base</option>
+        </select>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Tax Document (W-9/W-8)
-          <input
-            type="file"
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx"
-            className="mt-1 block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-md file:border-0
-                      file:text-sm file:font-medium
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-          />
+      {/* <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Tax Form (Optional)
         </label>
-        <p className="mt-1 text-sm text-gray-500">Upload W-9 for US vendors or W-8 for international vendors</p>
-      </div>
+        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-gray-50">
+          <div className="space-y-1 text-center">
+            <svg
+              className="mx-auto h-12 w-12 text-gray-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="flex text-sm text-gray-600">
+              <label
+                htmlFor="file-upload"
+                className="relative cursor-pointer rounded-md font-medium text-gray-600 hover:text-gray-500"
+              >
+                <span>Drag and drop your file here, or browse files</span>
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  className="sr-only"
+                  onChange={handleFileChange}
+                  accept=".pdf"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-gray-500">PDF files only</p>
+          </div>
+        </div>
+      </div> */}
       
-      <div>
+      <div className="flex justify-end mt-8">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+          className="px-16 py-2.5 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-sm shadow-sm focus:outline-none disabled:bg-gray-300"
         >
-          {isSubmitting ? 'Adding Vendor...' : 'Add Vendor'}
+          {isSubmitting ? 'Saving...' : 'Save'}
         </button>
       </div>
     </form>

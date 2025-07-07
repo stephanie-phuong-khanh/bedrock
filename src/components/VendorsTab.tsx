@@ -22,6 +22,8 @@ export default function VendorsTab() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+  const [currentVendor, setCurrentVendor] = useState<Vendor | undefined>(undefined);
+  const [isEditing, setIsEditing] = useState(false);
   const supabase = createClientComponentClient();
   
   const loadVendors = useCallback(async () => {
@@ -50,6 +52,14 @@ export default function VendorsTab() {
   const handleVendorAdded = () => {
     loadVendors();
     setIsSidePanelOpen(false);
+    setCurrentVendor(undefined);
+    setIsEditing(false);
+  };
+  
+  const handleEditVendor = (vendor: Vendor) => {
+    setCurrentVendor(vendor);
+    setIsEditing(true);
+    setIsSidePanelOpen(true);
   };
   
   if (isLoading) {
@@ -122,7 +132,7 @@ export default function VendorsTab() {
                       <div className="flex justify-end">
                         <button 
                           className="text-gray-400 hover:text-gray-600 mr-3"
-                          onClick={() => {/* Edit vendor logic */}}
+                          onClick={() => handleEditVendor(vendor)}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -148,7 +158,7 @@ export default function VendorsTab() {
         )}
       </div>
       
-      {/* Side panel for adding new vendor */}
+      {/* Side panel for adding/editing vendor */}
       <div 
         className={`fixed inset-y-0 right-0 w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl transform ${
           isSidePanelOpen ? 'translate-x-0' : 'translate-x-full'
@@ -156,16 +166,31 @@ export default function VendorsTab() {
       >
         <div className="h-full overflow-y-auto p-8">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-medium">Add New Vendor</h2>
+            <h2 className="text-2xl font-medium">
+              {isEditing ? 'Edit Vendor' : 'Add New Vendor'}
+            </h2>
             <button 
-              onClick={() => setIsSidePanelOpen(false)}
+              onClick={() => {
+                setIsSidePanelOpen(false);
+                // Reset editing state when closing
+                if (isEditing) {
+                  setTimeout(() => {
+                    setIsEditing(false);
+                    setCurrentVendor(undefined);
+                  }, 300); // Wait for animation to complete
+                }
+              }}
               className="text-gray-500 hover:text-gray-700"
             >
               <span className="text-2xl">&times;</span>
             </button>
           </div>
           
-          <VendorForm onSuccess={handleVendorAdded} />
+          <VendorForm 
+            onSuccess={handleVendorAdded} 
+            vendor={currentVendor}
+            isEditing={isEditing}
+          />
         </div>
       </div>
       

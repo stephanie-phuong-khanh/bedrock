@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { NewVendor } from '@/types/supabase';
+import type { NewVendor, Vendor } from '@/types/supabase';
 import type { Session } from 'next-auth';
 
 interface VendorFormProps {
   onSuccess?: () => void;
+  vendor?: Vendor;
+  isEditing?: boolean;
 }
 
-export default function VendorForm({ onSuccess }: VendorFormProps) {
+export default function VendorForm({ onSuccess, vendor, isEditing = false }: VendorFormProps) {
   const { data: session } = useSession() as { data: Session | null };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClientComponentClient();
@@ -21,6 +23,18 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
     wallet_address: '',
     wallet_chain: '',
   });
+  
+  // Initialize form with vendor data if editing
+  useEffect(() => {
+    if (vendor && isEditing) {
+      setFormData({
+        name: vendor.name || '',
+        email: vendor.email || '',
+        wallet_address: vendor.wallet_address || '',
+        wallet_chain: vendor.wallet_chain || '',
+      });
+    }
+  }, [vendor, isEditing]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -33,49 +47,69 @@ export default function VendorForm({ onSuccess }: VendorFormProps) {
     e.preventDefault();
     
     if (!session?.user?.id) {
-      alert('You must be logged in to add a vendor');
+      alert('You must be logged in to manage vendors');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      // Create vendor object with optional wallet fields
-      const newVendor: NewVendor = {
-        user_id: session.user.id,
-        name: formData.name,
-        email: formData.email,
-        wallet_address: formData.wallet_address || null,
-        wallet_chain: formData.wallet_chain || null,
-        tax_file_url: null,
-      };
-      
-      console.log('NEW VENDOR:', newVendor);
-
-      const { error } = await supabase
-        .from('vendors')
-        .insert([newVendor]);
+      if (isEditing && vendor) {
+        // Update existing vendor
+        const { error } = await supabase
+          .from('vendors')
+          .update({
+            name: formData.name,
+            email: formData.email,
+            wallet_address: formData.wallet_address || null,
+            wallet_chain: formData.wallet_chain || null,
+          })
+          .eq('id', vendor.id)
+          .eq('user_id', session.user.id); // Security check
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      
-      // Reset form and show success
-      setFormData({
-        name: '',
-        email: '',
-        wallet_address: '',
-        wallet_chain: '',
-      });
-      
-      // Call the onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
+        // Call the onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          alert('Vendor updated successfully!');
+        }
       } else {
-        alert('Vendor added successfully!');
+        // Create new vendor
+        const newVendor: NewVendor = {
+          user_id: session.user.id,
+          name: formData.name,
+          email: formData.email,
+          wallet_address: formData.wallet_address || null,
+          wallet_chain: formData.wallet_chain || null,
+          tax_file_url: null,
+        };
+        
+        const { error } = await supabase
+          .from('vendors')
+          .insert([newVendor]);
+          
+        if (error) throw error;
+        
+        // Reset form and show success
+        setFormData({
+          name: '',
+          email: '',
+          wallet_address: '',
+          wallet_chain: '',
+        });
+        
+        // Call the onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          alert('Vendor added successfully!');
+        }
       }
-      
     } catch (error) {
-      console.error('Error adding vendor:', error);
-      alert('Failed to add vendor. Please try again.');
+      console.error(`Error ${isEditing ? 'updating' : 'adding'} vendor:`, error);
+      alert(`Failed to ${isEditing ? 'update' : 'add'} vendor. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }

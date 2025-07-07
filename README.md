@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Bedrock
 
-## Getting Started
+A simple web app for users to pay their bills in stablecoins and track their payments to be accounting-ready.
 
-First, run the development server:
+## Overview
+
+- **Frontend/Backend**: Next.js 15, deployed on Vercel at https://bedrock.vercel.app
+- **Authentication**: NextAuth.js with Google OAuth
+- **Database/Storage**: Supabase
+
+## Local Development
+
+### Environment Setup
+
+Create a `.env.local` file in the root directory with the following variables:
 
 ```bash
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+# Generate your own random secret using `openssl rand -base64 32`
+NEXTAUTH_SECRET=your-nextauth-secret
+
+# Google OAuth
+# Ask someone with access to the `Bedrock` Google Cloud Project for these credentials under the `bedrock-dev` OAuth 2.0 Client
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Supabase
+# Ask for access to the `bedrock-dev` Supabase project
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+```
+
+### Installation and Running
+
+```bash
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Access Requirements
 
-## Learn More
+- **Vercel**: Request access to the `bedrock` Vercel project
+- **Supabase**: Request access to the `bedrock-prod` Supabase project
 
-To learn more about Next.js, take a look at the following resources:
+### Deployment Process
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Environment Variables**: Already configured in Vercel project settings
+   - No need to set up production environment variables locally
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Continuous Deployment**:
+   - Pushing to the `main` branch automatically triggers deployment
+   - Run `npm run build` locally before pushing to catch any linting errors
+   - Failed builds will prevent deployment on Vercel

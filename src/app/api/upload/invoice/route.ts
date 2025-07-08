@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const userId = formData.get('userId') as string;
+    const vendorId = formData.get('vendorId') as string || null;
     
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -67,11 +68,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate signed URL' }, { status: 500 });
     }
 
-    // Return the file path and signed URL
+    // Create a record in the invoices table
+    const invoiceId = `INV-${Date.now()}`;
+    const { error: insertError } = await supabaseAdmin
+      .from('invoices')
+      .insert({
+        id: invoiceId,
+        user_id: userId,
+        vendor_id: vendorId, // Use the vendor ID if provided
+        file_url: fileName, // Store the path to the file in Supabase storage
+        status: 'uploaded',
+        ocr_data: null, // Will be populated later if OCR processing is implemented
+        invoice_number: null // Will be populated later if extracted from the invoice
+      });
+
+    if (insertError) {
+      console.error('Error creating invoice record:', insertError);
+      return NextResponse.json({ error: 'Failed to create invoice record: ' + insertError.message }, { status: 500 });
+    }
+
+    // Return the file path, signed URL, and invoice ID
     return NextResponse.json({
       success: true,
       filePath: fileName,
-      fileUrl: signedUrlData.signedUrl
+      fileUrl: signedUrlData.signedUrl,
+      invoiceId: invoiceId
     });
   } catch (error: unknown) {
     console.error('Error in invoice upload:', error);

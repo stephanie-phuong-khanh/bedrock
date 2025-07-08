@@ -23,6 +23,7 @@ export default function PaymentTab() {
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [invoiceFileUrl, setInvoiceFileUrl] = useState<string | null>(null);
+  const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -149,6 +150,7 @@ export default function PaymentTab() {
       setInvoiceFile(null);
       setInvoiceFilePath(null);
       setInvoiceFileUrl(null);
+      setInvoiceId(null);
       
       console.log('Invoice deleted successfully');
       
@@ -158,6 +160,7 @@ export default function PaymentTab() {
       setInvoiceFile(null);
       setInvoiceFilePath(null);
       setInvoiceFileUrl(null);
+      setInvoiceId(null);
     }
   };
 
@@ -173,6 +176,11 @@ export default function PaymentTab() {
       formData.append('file', fileToUse);
       formData.append('userId', session.user.id);
       
+      // Include vendor ID if a vendor is selected
+      if (selectedVendor) {
+        formData.append('vendorId', selectedVendor.id);
+      }
+      
       const response = await fetch('/api/upload/invoice', {
         method: 'POST',
         body: formData,
@@ -186,9 +194,11 @@ export default function PaymentTab() {
       
       setInvoiceFilePath(result.filePath);
       setInvoiceFileUrl(result.fileUrl);
+      setInvoiceId(result.invoiceId);
       
       // Log the file URL to console
       console.log('Invoice uploaded successfully. File URL:', result.fileUrl);
+      console.log('Invoice ID:', result.invoiceId);
       
     } catch (err: unknown) {
       console.error('Error uploading invoice:', err);
@@ -208,6 +218,24 @@ export default function PaymentTab() {
     // Upload invoice if one is selected but not yet uploaded
     if (invoiceFile && !invoiceFilePath) {
       await uploadInvoice();
+    }
+    
+    // If we have an invoice ID and a selected vendor, update the invoice record
+    if (invoiceId && selectedVendor) {
+      try {
+        const { error } = await supabase
+          .from('invoices')
+          .update({ vendor_id: selectedVendor.id })
+          .eq('id', invoiceId);
+          
+        if (error) {
+          console.error('Error updating invoice with vendor:', error);
+        } else {
+          console.log('Invoice updated with vendor ID:', selectedVendor.id);
+        }
+      } catch (err) {
+        console.error('Error updating invoice record:', err);
+      }
     }
     
     // Here you would handle the payment submission

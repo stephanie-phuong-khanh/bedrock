@@ -88,11 +88,9 @@ export default function PaymentTab() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      
-      // Validate file type (PDF only)
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
       if (file.type !== 'application/pdf') {
         setUploadError('Only PDF files are allowed');
         setInvoiceFile(null);
@@ -101,6 +99,9 @@ export default function PaymentTab() {
       
       setInvoiceFile(file);
       setUploadError(null);
+      
+      // Automatically upload the file when selected
+      uploadInvoice(file);
     }
   };
 
@@ -108,11 +109,9 @@ export default function PaymentTab() {
     e.preventDefault();
     e.stopPropagation();
     
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      
-      // Validate file type (PDF only)
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      // Validate file type
       if (file.type !== 'application/pdf') {
         setUploadError('Only PDF files are allowed');
         setInvoiceFile(null);
@@ -121,6 +120,9 @@ export default function PaymentTab() {
       
       setInvoiceFile(file);
       setUploadError(null);
+      
+      // Automatically upload the file when dropped
+      uploadInvoice(file);
     }
   };
 
@@ -159,15 +161,16 @@ export default function PaymentTab() {
     }
   };
 
-  const uploadInvoice = async () => {
-    if (!invoiceFile || !session?.user?.id) return;
+  const uploadInvoice = async (fileToUpload?: File) => {
+    const fileToUse = fileToUpload || invoiceFile;
+    if (!fileToUse || !session?.user?.id) return;
     
     try {
       setIsUploading(true);
       setUploadError(null);
       
       const formData = new FormData();
-      formData.append('file', invoiceFile);
+      formData.append('file', fileToUse);
       formData.append('userId', session.user.id);
       
       const response = await fetch('/api/upload/invoice', {
@@ -280,7 +283,7 @@ export default function PaymentTab() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <p className="mt-2 text-sm text-gray-500">Uploading...</p>
+                      <p className="mt-2 text-sm text-gray-500">Uploading{invoiceFile ? ` ${invoiceFile.name}` : ''}...</p>
                     </div>
                   ) : invoiceFileUrl ? (
                     <div className="w-full h-full flex flex-col">
@@ -306,22 +309,6 @@ export default function PaymentTab() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                       </svg>
                       <p className="mt-2 text-sm text-gray-700">{invoiceFile.name}</p>
-                      <div className="flex mt-2 space-x-2">
-                        <button 
-                          type="button" 
-                          className="text-xs text-blue-500 hover:text-blue-700"
-                          onClick={uploadInvoice}
-                        >
-                          Upload
-                        </button>
-                        <button 
-                          type="button" 
-                          className="text-xs text-red-500 hover:text-red-700"
-                          onClick={() => setInvoiceFile(null)}
-                        >
-                          Remove
-                        </button>
-                      </div>
                     </div>
                   ) : (
                     <>

@@ -1,70 +1,159 @@
 'use client';
 
 import { signOut, useSession } from "next-auth/react";
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
-import PaymentTab from './PaymentTab';
 
 export default function DashboardView() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState('transactions');
+  const [activeTab, setActiveTab] = useState('payments');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPayBillModal, setShowPayBillModal] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  
+  // Close modal when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node) && 
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setShowPayBillModal(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
   
   return (
-    <div className="min-h-screen bg-white relative">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold">Bedrock BillPay</h1>
-        <p className="text-gray-600 mt-1">Manage your crypto bill payments</p>
+    <div className="min-h-screen bg-white flex">
+      {/* Left Panel */}
+      <div className="w-20 border-r border-gray-200 min-h-screen flex flex-col items-center">
+        {/* Left panel content will go here */}
+        
+        {/* User Avatar - moved to bottom of left panel */}
+        <div className="mt-auto mb-6 relative">
+          <button 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {session?.user?.image ? (
+              <Image 
+                src={session.user.image} 
+                alt="User avatar" 
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-gray-600 text-sm font-medium">
+                {session?.user?.name?.charAt(0) || 'U'}
+              </span>
+            )}
+          </button>
+          
+          {/* User menu popup */}
+          {showUserMenu && (
+            <div className="absolute bottom-12 left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-medium">{session?.user?.name}</p>
+                <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1">
+        {/* Header */}
+        <div className="px-8 py-6">
+          <div className="flex justify-between items-center relative">
+            <h1 className="text-3xl font-bold">Bill Pay</h1>
+            <div>
+              <button 
+                ref={buttonRef}
+                className="bg-gray-200 hover:bg-gray-300 text-black font-medium py-2 px-16 rounded"
+                onClick={() => setShowPayBillModal(!showPayBillModal)}
+              >
+                Pay Bill
+              </button>
+              
+              {/* Pay Bill Modal */}
+              {showPayBillModal && (
+                <div 
+                  ref={modalRef}
+                  className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded shadow-lg z-20 w-[450px]"
+                >
+                  <div className="p-6">
+                    <p className="mb-4 font-medium">Select an invoice to upload</p>
+                    
+                    <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center text-center">
+                      <div className="mb-2 text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                      </div>
+                      <p className="mb-1">Drag and drop your invoice here, or</p>
+                      <p className="mb-2">browse files</p>
+                      <p className="text-sm text-gray-500">PDF files only</p>
+                    </div>
+                    
+                    <div className="mt-6 border-t border-gray-200 pt-4">
+                      <button className="w-full flex items-center justify-between py-3">
+                        <span>Pay bill without an invoice</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         
         {/* Tab Navigation */}
-        <div className="mt-8 border-b border-gray-200">
-          <div className="flex -mb-px">
+        <div className="border-b border-gray-200">
+          <div className="flex">
             <button
-              onClick={() => setActiveTab('transactions')}
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'transactions'
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              onClick={() => setActiveTab('payments')}
+              className={`py-4 px-8 mr-8 font-medium text-sm ${
+                activeTab === 'payments'
+                  ? 'border-b-2 border-black text-black'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Transaction History
-            </button>
-            <button
-              onClick={() => setActiveTab('payment')}
-              className={`mr-8 py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'payment'
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Start New Payment
+              Payments
             </button>
             <button
               onClick={() => setActiveTab('vendors')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-8 font-medium text-sm ${
                 activeTab === 'vendors'
-                  ? 'border-black text-black'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-b-2 border-black text-black'
+                  : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              Manage Vendors
+              Vendors
             </button>
           </div>
         </div>
         
         {/* Tab Content */}
-        <div className="py-6">
-          {activeTab === 'transactions' && (
+        <div className="p-8">
+          {activeTab === 'payments' && (
             <div className="min-h-[400px]">
-              {/* Transaction content will go here */}
-            </div>
-          )}
-          
-          {activeTab === 'payment' && (
-            <div className="min-h-[400px]">
-              <PaymentTab />
+              {/* Payments content will go here */}
             </div>
           )}
           
@@ -74,44 +163,6 @@ export default function DashboardView() {
             </div>
           )}
         </div>
-      </div>
-      
-      {/* User Avatar in bottom left */}
-      <div className="fixed bottom-6 left-6">
-        <button 
-          onClick={() => setShowUserMenu(!showUserMenu)}
-          className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          {session?.user?.image ? (
-            <Image 
-              src={session.user.image} 
-              alt="User avatar" 
-              width={40}
-              height={40}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-gray-600 text-sm font-medium">
-              {session?.user?.name?.charAt(0) || 'U'}
-            </span>
-          )}
-        </button>
-        
-        {/* User menu popup */}
-        {showUserMenu && (
-          <div className="absolute bottom-12 left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-medium">{session?.user?.name}</p>
-              <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
-            </div>
-            <button
-              onClick={() => signOut()}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Sign out
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

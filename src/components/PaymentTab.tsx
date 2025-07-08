@@ -20,6 +20,10 @@ export default function PaymentTab() {
   const [currency, setCurrency] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [network, setNetwork] = useState<string>('');
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
@@ -82,11 +86,90 @@ export default function PaymentTab() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Validate file type (PDF only)
+      if (file.type !== 'application/pdf') {
+        setUploadError('Only PDF files are allowed');
+        setInvoiceFile(null);
+        return;
+      }
+      
+      setInvoiceFile(file);
+      setUploadError(null);
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      
+      // Validate file type (PDF only)
+      if (file.type !== 'application/pdf') {
+        setUploadError('Only PDF files are allowed');
+        setInvoiceFile(null);
+        return;
+      }
+      
+      setInvoiceFile(file);
+      setUploadError(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const uploadInvoice = async () => {
+    if (!invoiceFile || !session?.user?.id) return;
+    
+    try {
+      setIsUploading(true);
+      setUploadError(null);
+      
+      const formData = new FormData();
+      formData.append('file', invoiceFile);
+      formData.append('userId', session.user.id);
+      
+      const response = await fetch('/api/upload/invoice', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to upload invoice');
+      }
+      
+      setInvoiceFilePath(result.filePath);
+      
+    } catch (err: unknown) {
+      console.error('Error uploading invoice:', err);
+      setUploadError(err instanceof Error ? err.message : 'Failed to upload invoice');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormComplete) {
       alert('Please fill out all required fields');
       return;
+    }
+    
+    // Upload invoice if one is selected but not yet uploaded
+    if (invoiceFile && !invoiceFilePath) {
+      await uploadInvoice();
     }
     
     // Here you would handle the payment submission
@@ -151,14 +234,83 @@ export default function PaymentTab() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Upload invoice (optional)
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center bg-gray-100">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                  </svg>
-                  <p className="mt-2 text-xs text-gray-500 text-center">
-                    Drag and drop your file here, or<br />browse files
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">PDF files only</p>
+                <div 
+                  className={`border-2 border-dashed ${uploadError ? 'border-red-300' : 'border-gray-300'} rounded-md p-6 flex flex-col items-center justify-center bg-gray-100 relative`}
+                  onDrop={handleFileDrop}
+                  onDragOver={handleDragOver}
+                >
+                  {isUploading ? (
+                    <div className="flex flex-col items-center">
+                      <svg className="animate-spin h-8 w-8 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-500">Uploading...</p>
+                    </div>
+                  ) : invoiceFilePath ? (
+                    <div className="flex flex-col items-center">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-700">Invoice uploaded successfully</p>
+                      <button 
+                        type="button" 
+                        className="mt-2 text-xs text-red-500 hover:text-red-700"
+                        onClick={() => {
+                          setInvoiceFile(null);
+                          setInvoiceFilePath(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : invoiceFile ? (
+                    <div className="flex flex-col items-center">
+                      <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-700">{invoiceFile.name}</p>
+                      <div className="flex mt-2 space-x-2">
+                        <button 
+                          type="button" 
+                          className="text-xs text-blue-500 hover:text-blue-700"
+                          onClick={uploadInvoice}
+                        >
+                          Upload
+                        </button>
+                        <button 
+                          type="button" 
+                          className="text-xs text-red-500 hover:text-red-700"
+                          onClick={() => setInvoiceFile(null)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                      </svg>
+                      <p className="mt-2 text-xs text-gray-500 text-center">
+                        Drag and drop your file here, or<br />
+                        <label className="cursor-pointer text-blue-500 hover:text-blue-700">
+                          browse files
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="application/pdf"
+                            onChange={handleFileChange}
+                          />
+                        </label>
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">PDF files only</p>
+                    </>
+                  )}
+                  
+                  {uploadError && (
+                    <p className="mt-2 text-xs text-red-500">{uploadError}</p>
+                  )}
                 </div>
               </div>
             </div>

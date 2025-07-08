@@ -22,6 +22,7 @@ export default function PaymentTab() {
   const [network, setNetwork] = useState<string>('');
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
+  const [invoiceFileUrl, setInvoiceFileUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -128,6 +129,36 @@ export default function PaymentTab() {
     e.stopPropagation();
   };
 
+  const deleteInvoice = async () => {
+    if (!invoiceFilePath || !session?.user?.id) return;
+    
+    try {
+      const response = await fetch(`/api/upload/invoice?filePath=${encodeURIComponent(invoiceFilePath)}&userId=${encodeURIComponent(session.user.id)}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete invoice');
+      }
+      
+      // Reset invoice state after successful deletion
+      setInvoiceFile(null);
+      setInvoiceFilePath(null);
+      setInvoiceFileUrl(null);
+      
+      console.log('Invoice deleted successfully');
+      
+    } catch (err: unknown) {
+      console.error('Error deleting invoice:', err);
+      // Still reset the state on the client side even if the server deletion fails
+      setInvoiceFile(null);
+      setInvoiceFilePath(null);
+      setInvoiceFileUrl(null);
+    }
+  };
+
   const uploadInvoice = async () => {
     if (!invoiceFile || !session?.user?.id) return;
     
@@ -151,6 +182,10 @@ export default function PaymentTab() {
       }
       
       setInvoiceFilePath(result.filePath);
+      setInvoiceFileUrl(result.fileUrl);
+      
+      // Log the file URL to console
+      console.log('Invoice uploaded successfully. File URL:', result.fileUrl);
       
     } catch (err: unknown) {
       console.error('Error uploading invoice:', err);
@@ -235,7 +270,7 @@ export default function PaymentTab() {
                   Upload invoice (optional)
                 </label>
                 <div 
-                  className={`border-2 border-dashed ${uploadError ? 'border-red-300' : 'border-gray-300'} rounded-md p-6 flex flex-col items-center justify-center bg-gray-100 relative`}
+                  className={`border-2 border-dashed ${uploadError ? 'border-red-300' : 'border-gray-300'} rounded-md p-6 flex flex-col items-center justify-center bg-gray-100 relative ${invoiceFileUrl ? 'h-96' : ''}`}
                   onDrop={handleFileDrop}
                   onDragOver={handleDragOver}
                 >
@@ -247,22 +282,23 @@ export default function PaymentTab() {
                       </svg>
                       <p className="mt-2 text-sm text-gray-500">Uploading...</p>
                     </div>
-                  ) : invoiceFilePath ? (
-                    <div className="flex flex-col items-center">
-                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      <p className="mt-2 text-sm text-gray-700">Invoice uploaded successfully</p>
-                      <button 
-                        type="button" 
-                        className="mt-2 text-xs text-red-500 hover:text-red-700"
-                        onClick={() => {
-                          setInvoiceFile(null);
-                          setInvoiceFilePath(null);
-                        }}
-                      >
-                        Remove
-                      </button>
+                  ) : invoiceFileUrl ? (
+                    <div className="w-full h-full flex flex-col">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-sm text-gray-700 font-medium">Invoice Preview</p>
+                        <button 
+                          type="button" 
+                          className="text-xs text-red-500 hover:text-red-700"
+                          onClick={deleteInvoice}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <iframe 
+                        src={invoiceFileUrl} 
+                        className="w-full h-full border-0 rounded"
+                        title="Invoice PDF Preview"
+                      />
                     </div>
                   ) : invoiceFile ? (
                     <div className="flex flex-col items-center">

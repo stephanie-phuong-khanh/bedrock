@@ -58,17 +58,67 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to upload file: ' + error.message }, { status: 500 });
     }
 
-    // Get the public URL for the file
-    const fileUrl = supabaseAdmin.storage.from('invoices').getPublicUrl(fileName).data.publicUrl;
+    // Create a signed URL that will work even with RLS enabled
+    const { data: signedUrlData } = await supabaseAdmin.storage
+      .from('invoices')
+      .createSignedUrl(fileName, 60 * 60); // 1 hour expiry
 
-    // Return the file URL and path
+    if (!signedUrlData?.signedUrl) {
+      return NextResponse.json({ error: 'Failed to generate signed URL' }, { status: 500 });
+    }
+
+    // Return the file path and signed URL
     return NextResponse.json({
       success: true,
       filePath: fileName,
-      fileUrl: fileUrl
+      fileUrl: signedUrlData.signedUrl
     });
   } catch (error: unknown) {
     console.error('Error in invoice upload:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get the file path from the request
+    const { searchParams } = new URL(request.url);
+    const filePath = searchParams.get('filePath');
+    const userId = searchParams.get('userId');
+
+    if (!filePath) {
+      return NextResponse.json({ error: 'No file path provided' }, { status: 400 });
+    }
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Security check: ensure the file belongs to the user
+    if (!filePath.startsWith(`${userId}/`)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Delete the file from Supabase storage
+    const { error } = await supabaseAdmin.storage
+      .from('invoices')
+      .remove([filePath]);
+
+    if (error) {
+      console.error('Error deleting file:', error);
+      return NextResponse.json({ error: 'Failed to delete file: ' + error.message }, { status: 500 });
+    }
+
+    // Return success response
+    return NextResponse.json({
+      success: true,
+      message: 'File deleted successfully'
+    });
+  } catch (error: unknown) {
+    console.error('Error in invoice deletion:', error);
     return NextResponse.json({ 
       error: 'Internal server error', 
       details: error instanceof Error ? error.message : 'Unknown error' 

@@ -20,6 +20,8 @@ export default function PaymentTab() {
   const [currency, setCurrency] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [network, setNetwork] = useState<string>('');
+  const [category, setCategory] = useState<string>('');
+  const [memo, setMemo] = useState<string>('');
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [invoiceFilePath, setInvoiceFilePath] = useState<string | null>(null);
   const [invoiceFileUrl, setInvoiceFileUrl] = useState<string | null>(null);
@@ -440,6 +442,46 @@ export default function PaymentTab() {
                   <option value="Polygon">Polygon</option>
                   <option value="Solana">Solana</option>
                 </select>
+              </div>
+              
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <div className="relative">
+                  <select
+                    id="category"
+                    className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent appearance-none"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    <option value="Professional Services">Professional Services</option>
+                    <option value="Software & SaaS">Software & SaaS</option>
+                    <option value="Marketing & Advertising">Marketing & Advertising</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Office Supplies">Office Supplies</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-1">
+                  Memo (Optional)
+                </label>
+                <textarea
+                  id="memo"
+                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
+                  rows={4}
+                  placeholder="Additional notes about this payment..."
+                  value={memo}
+                  onChange={(e) => setMemo(e.target.value)}
+                />
               </div>
             </div>
           </div>

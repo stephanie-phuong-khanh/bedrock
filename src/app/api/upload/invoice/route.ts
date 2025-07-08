@@ -109,6 +109,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const filePath = searchParams.get('filePath');
     const userId = searchParams.get('userId');
+    const invoiceId = searchParams.get('invoiceId');
 
     if (!filePath) {
       return NextResponse.json({ error: 'No file path provided' }, { status: 400 });
@@ -133,10 +134,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to delete file: ' + error.message }, { status: 500 });
     }
 
+    // If invoiceId is provided, delete the invoice record from the database
+    if (invoiceId) {
+      const { error: deleteError } = await supabaseAdmin
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId)
+        .eq('user_id', userId); // Additional security check
+
+      if (deleteError) {
+        console.error('Error deleting invoice record:', deleteError);
+        return NextResponse.json({ error: 'Failed to delete invoice record: ' + deleteError.message }, { status: 500 });
+      }
+      
+      console.log(`Invoice record ${invoiceId} deleted successfully`);
+    }
+
     // Return success response
     return NextResponse.json({
       success: true,
-      message: 'File deleted successfully'
+      message: 'Invoice deleted successfully'
     });
   } catch (error: unknown) {
     console.error('Error in invoice deletion:', error);

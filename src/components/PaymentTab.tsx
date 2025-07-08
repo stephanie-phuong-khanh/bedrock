@@ -136,7 +136,17 @@ export default function PaymentTab() {
     if (!invoiceFilePath || !session?.user?.id) return;
     
     try {
-      const response = await fetch(`/api/upload/invoice?filePath=${encodeURIComponent(invoiceFilePath)}&userId=${encodeURIComponent(session.user.id)}`, {
+      // Include invoiceId in the query parameters if available
+      const queryParams = new URLSearchParams({
+        filePath: invoiceFilePath,
+        userId: session.user.id,
+      });
+      
+      if (invoiceId) {
+        queryParams.append('invoiceId', invoiceId);
+      }
+      
+      const response = await fetch(`/api/upload/invoice?${queryParams.toString()}`, {
         method: 'DELETE',
       });
       

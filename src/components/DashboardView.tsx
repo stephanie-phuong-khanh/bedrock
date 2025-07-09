@@ -5,7 +5,7 @@ import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
-import { uploadInvoice } from '@/lib/invoice-utils';
+import { uploadInvoice, deleteInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
 import InvoiceViewer from './InvoiceViewer';
 
@@ -143,10 +143,29 @@ export default function DashboardView() {
   };
   
   // Handle invoice deletion
-  const handleInvoiceDelete = async () => {
-    // This function would call the deleteInvoice utility
-    // For now, just close the viewer
-    closeInvoiceViewer();
+  const handleInvoiceDelete = async (invoiceId: string) => {
+    if (!session?.user?.id || !currentInvoice) return;
+    
+    try {
+      // Extract the file path from the URL
+      // The filePath should be in the format userId/filename
+      // We can extract it from the file_url by removing the base URL and query parameters
+      const url = new URL(currentInvoice.file_url);
+      const pathParts = url.pathname.split('/');
+      const filePath = pathParts.slice(pathParts.length - 2).join('/');
+      
+      const success = await deleteInvoice(invoiceId, filePath, session.user.id);
+      
+      if (success) {
+        // Reset state to show upload interface
+        setCurrentInvoice(null);
+        setShowInvoiceUpload(true);
+      } else {
+        console.error('Failed to delete invoice');
+      }
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
   };
   
   return (

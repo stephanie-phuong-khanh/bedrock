@@ -1,7 +1,7 @@
 'use client';
 
 import { Invoice, Vendor } from '@/types/supabase';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -46,6 +46,9 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const [network, setNetwork] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [memo, setMemo] = useState<string>('');
+  
+  // Payment flow state
+  const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
@@ -212,9 +215,51 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       return;
     }
     
-    // Here you would handle the payment submission
-    alert('Payment process would be completed here');
+    // Show the confirmation screen
+    setShowConfirmation(true);
   };
+  
+  const handleBack = () => {
+    setShowConfirmation(false);
+  };
+  
+  const handleConfirmPayment = () => {
+    // This would handle the actual payment submission
+    // For now, it doesn't do anything as per requirements
+    console.log('Payment confirmed');
+  };
+  
+  // Calculate USD equivalent (mock implementation)
+  const usdEquivalent = useMemo(() => {
+    if (!amount || !currency) return '$0.00';
+    
+    // TODO: Replace with actual exchange rates
+    const rates: Record<string, number> = {
+      'ETH': 1800,
+      'USDC': 1,
+      'BTC': 45000
+    };
+    
+    const numericAmount = parseFloat(amount) || 0;
+    const rate = rates[currency] || 1;
+    const usdValue = numericAmount * rate;
+    
+    return `$${usdValue.toFixed(2)} (at rate: $${rate.toFixed(4)})`;
+  }, [amount, currency]);
+  
+  // Calculate gas fee (mock implementation)
+  const estimatedGasFee = useMemo(() => {
+    if (!network || !currency) return '$0.00';
+    
+    // Mock gas fees
+    const fees: Record<string, number> = {
+      'Ethereum': 0.015,
+      'Polygon': 0.001,
+      'Solana': 0.0001
+    };
+    
+    return `$${fees[network] || 0.01} USD`;
+  }, [network, currency]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex">
@@ -330,8 +375,78 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
 
         <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
         
-        {/* Payment Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {showConfirmation ? (
+          /* Confirmation Screen */
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Confirm Payment</h3>
+              <p className="text-gray-600">Review the details before sending your payment</p>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-lg font-medium mb-2">Paying to</h4>
+                <div className="bg-gray-50 p-4 rounded flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
+                    <p className="text-gray-500 text-sm">{category || 'Professional services'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</p>
+                    <p className="text-gray-500 text-sm">{network.toLowerCase()}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-medium mb-2">Payment details</h4>
+                <div className="bg-gray-50 p-4 rounded space-y-2">
+                  <div className="flex justify-between">
+                    <p>Amount:</p>
+                    <p className="font-medium">{amount} {currency}</p>
+                  </div>
+                  <div className="flex justify-between">
+                    <p>USD Equivalent:</p>
+                    <p>{usdEquivalent}</p>
+                  </div>
+                  <div className="flex justify-between">
+                    <p>Est. Gas Fee:</p>
+                    <p>{estimatedGasFee}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {memo && (
+                <div>
+                  <h4 className="text-lg font-medium mb-2">Memo</h4>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <p>{memo}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-between pt-6">
+              <button
+                onClick={handleBack}
+                className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back
+              </button>
+              <button
+                onClick={handleConfirmPayment}
+                className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
+              >
+                Confirm &amp; Send Payment
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Payment Form */
+          <form onSubmit={handleSubmit} className="space-y-6">
           {errorMessage && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
               <div className="flex">
@@ -460,8 +575,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   >
                     <option value="">Select</option>
                     <option value="Professional Services">Professional Services</option>
-                    <option value="Software & SaaS">Software & SaaS</option>
-                    <option value="Marketing & Advertising">Marketing & Advertising</option>
+                    <option value="Software & SaaS">Software &amp; SaaS</option>
+                    <option value="Marketing & Advertising">Marketing &amp; Advertising</option>
                     <option value="Utilities">Utilities</option>
                     <option value="Office Supplies">Office Supplies</option>
                     <option value="Other">Other</option>
@@ -494,7 +609,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
               </button>
             </div>
           </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   );

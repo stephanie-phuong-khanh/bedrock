@@ -7,7 +7,7 @@ import Image from 'next/image';
 import VendorsTab from './VendorsTab';
 import { uploadInvoice, deleteInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
-import InvoiceViewer from './InvoiceViewer';
+import PaymentFlow from './PaymentFlow';
 
 // Extend the Session type to include the id property on the user object
 interface CustomSession extends Session {
@@ -132,7 +132,7 @@ export default function DashboardView() {
     fileInputRef.current?.click();
   };
   
-  const closeInvoiceViewer = () => {
+  const closePaymentFlow = () => {
     setCurrentInvoice(null);
     setShowInvoiceUpload(false);
   };
@@ -335,11 +335,11 @@ export default function DashboardView() {
         </div>
       </div>
       
-      {/* Full-screen Invoice Viewer */}
+      {/* Full-screen Payment Flow */}
       {(currentInvoice || showInvoiceUpload) && (
-        <InvoiceViewer 
+        <PaymentFlow 
           invoice={currentInvoice} 
-          onClose={closeInvoiceViewer}
+          onClose={closePaymentFlow}
           onDelete={handleInvoiceDelete}
           onUploadInvoice={async (file: File) => {
             if (!session?.user?.id) {

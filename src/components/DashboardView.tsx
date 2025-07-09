@@ -1,17 +1,37 @@
 'use client';
 
 import { signOut, useSession } from "next-auth/react";
+import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
+import { uploadInvoice } from '@/lib/invoice-utils';
+import { Invoice } from '@/types/supabase';
+import InvoiceViewer from './InvoiceViewer';
+
+// Extend the Session type to include the id property on the user object
+interface CustomSession extends Session {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+  }
+}
 
 export default function DashboardView() {
-  const { data: session } = useSession();
+  const { data: session } = useSession() as { data: CustomSession | null };
   const [activeTab, setActiveTab] = useState('payments');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
+  
   const modalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   
   // Close modal when clicking outside
   useEffect(() => {
@@ -27,6 +47,93 @@ export default function DashboardView() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  // Set up drag and drop event listeners
+  useEffect(() => {
+    const dropZone = dropZoneRef.current;
+    if (!dropZone) return;
+    
+    const preventDefault = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    
+    const handleDragOver = (e: DragEvent) => {
+      preventDefault(e);
+      dropZone.classList.add('bg-gray-100');
+    };
+    
+    const handleDragLeave = (e: DragEvent) => {
+      preventDefault(e);
+      dropZone.classList.remove('bg-gray-100');
+    };
+    
+    const handleDrop = (e: DragEvent) => {
+      preventDefault(e);
+      dropZone.classList.remove('bg-gray-100');
+      
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        handleFileUpload(e.dataTransfer.files[0]);
+      }
+    };
+    
+    dropZone.addEventListener('dragover', handleDragOver);
+    dropZone.addEventListener('dragleave', handleDragLeave);
+    dropZone.addEventListener('drop', handleDrop);
+    
+    return () => {
+      dropZone.removeEventListener('dragover', handleDragOver);
+      dropZone.removeEventListener('dragleave', handleDragLeave);
+      dropZone.removeEventListener('drop', handleDrop);
+    };
+  }, []);
+  
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+  
+  const handleFileUpload = async (file: File) => {
+    // Validate file type
+    if (!file.type.includes('pdf')) {
+      setUploadError('Only PDF files are allowed');
+      return;
+    }
+    
+    if (!session?.user?.id) {
+      setUploadError('You must be logged in to upload invoices');
+      return;
+    }
+    
+    setIsUploading(true);
+    setUploadError(null);
+    
+    try {
+      const invoice = await uploadInvoice(file, session.user.id);
+      
+      if (invoice) {
+        // Close the modal and show the full-screen invoice viewer
+        setShowPayBillModal(false);
+        setCurrentInvoice(invoice);
+      } else {
+        setUploadError('Failed to upload invoice. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error uploading invoice:', error);
+      setUploadError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  const handleBrowseFiles = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const closeInvoiceViewer = () => {
+    setCurrentInvoice(null);
+  };
   
   return (
     <div className="min-h-screen bg-white flex">
@@ -97,15 +204,40 @@ export default function DashboardView() {
                   <div className="p-6">
                     <p className="mb-4 font-medium">Select an invoice to upload</p>
                     
-                    <div className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center text-center">
-                      <div className="mb-2 text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                      </div>
-                      <p className="mb-1">Drag and drop your invoice here, or</p>
-                      <p className="mb-2">browse files</p>
-                      <p className="text-sm text-gray-500">PDF files only</p>
+                    <div 
+                      ref={dropZoneRef}
+                      className="border-2 border-dashed border-gray-300 rounded-md p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-200"
+                      onClick={handleBrowseFiles}
+                    >
+                      {isUploading ? (
+                        <div className="flex flex-col items-center">
+                          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mb-2"></div>
+                          <p>Uploading...</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="mb-2 text-gray-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                          </div>
+                          <p className="mb-1">Drag and drop your invoice here, or</p>
+                          <p className="mb-2 text-blue-600 font-medium">browse files</p>
+                          <p className="text-sm text-gray-500">PDF files only</p>
+                          
+                          {uploadError && (
+                            <p className="mt-2 text-red-500 text-sm">{uploadError}</p>
+                          )}
+                          
+                          <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            className="hidden" 
+                            accept=".pdf"
+                            onChange={handleFileInputChange}
+                          />
+                        </>
+                      )}
                     </div>
                     
                     <div className="mt-6 border-t border-gray-200 pt-4">
@@ -164,6 +296,14 @@ export default function DashboardView() {
           )}
         </div>
       </div>
+      
+      {/* Full-screen Invoice Viewer */}
+      {currentInvoice && (
+        <InvoiceViewer 
+          invoice={currentInvoice} 
+          onClose={closeInvoiceViewer} 
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import WalletModal from './WalletModal';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -49,6 +50,9 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  
+  // Wallet modal state
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
@@ -224,8 +228,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
   
   const handleConfirmPayment = () => {
-    // This would handle the actual payment submission
-    // For now, it doesn't do anything as per requirements
+    // Show wallet modal when user clicks "Confirm & Send Payment"
+    setShowWalletModal(true);
     console.log('Payment confirmed');
   };
   
@@ -612,6 +616,12 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
           </form>
         )}
       </div>
+      
+      {/* Wallet Modal */}
+      <WalletModal 
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+      />
     </div>
   );
 }

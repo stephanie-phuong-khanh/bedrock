@@ -5,6 +5,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import WalletModal from './WalletModal';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -26,6 +28,7 @@ interface CustomSession extends Session {
 export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete }: PaymentFlowProps) {
   const { data: session } = useSession() as { data: CustomSession | null };
   const supabase = createClientComponentClient();
+  const { primaryWallet } = useDynamicContext();
   
   // Invoice viewer states
   const [isPdf, setIsPdf] = useState(true);
@@ -49,6 +52,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
@@ -258,9 +262,21 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
   
   const handleConfirmPayment = () => {
+    // Show wallet connection modal if not connected
+    if (!primaryWallet) {
+      setShowWalletModal(true);
+      return;
+    }
+    
+    // If wallet is already connected, proceed with payment
+    processPayment();
+  };
+  
+  const processPayment = () => {
     // This would handle the actual payment submission
-    // For now, it doesn't do anything as per requirements
-    console.log('Payment confirmed');
+    console.log('Processing payment with wallet:', primaryWallet?.address);
+    // Close the wallet modal if it was open
+    setShowWalletModal(false);
   };
   
   // Calculate USD equivalent (mock implementation)
@@ -663,6 +679,13 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
           </form>
         )}
       </div>
+      
+      {/* Wallet Connection Modal */}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={() => setShowWalletModal(false)}
+        onSuccess={processPayment}
+      />
     </div>
   );
 }

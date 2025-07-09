@@ -7,7 +7,7 @@ export default function LoginView() {
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Bedrock BillPay</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Bedrock</h1>
           <p className="text-gray-600 mb-8">Manage your crypto bill payments</p>
         </div>
         

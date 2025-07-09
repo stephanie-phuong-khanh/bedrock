@@ -55,7 +55,19 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     amount.trim() !== '' && 
     currency !== '' && 
     walletAddress.trim() !== '' && 
-    network !== '';
+    network !== '';  // Ensure network is required
+    
+  // Debug validation state
+  useEffect(() => {
+    console.log('Validation state:', {
+      selectedVendor: !!selectedVendor,
+      amount: amount.trim() !== '',
+      currency: currency !== '',
+      walletAddress: walletAddress.trim() !== '',
+      network: network !== '',
+      isFormComplete
+    });
+  }, [selectedVendor, amount, currency, walletAddress, network, isFormComplete]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -210,12 +222,34 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormComplete) {
-      alert('Please fill out all required fields');
+    
+    // Explicitly check each required field
+    if (!selectedVendor) {
+      alert('Please select a vendor');
       return;
     }
     
-    // Show the confirmation screen
+    if (!amount.trim()) {
+      alert('Please enter an amount');
+      return;
+    }
+    
+    if (!currency) {
+      alert('Please select a currency');
+      return;
+    }
+    
+    if (!walletAddress.trim()) {
+      alert('Please enter a wallet address');
+      return;
+    }
+    
+    if (!network) {
+      alert('Please select a payment network');
+      return;
+    }
+    
+    // If all validations pass, show the confirmation screen
     setShowConfirmation(true);
   };
   
@@ -446,7 +480,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
           </div>
         ) : (
           /* Payment Form */
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
           {errorMessage && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
               <div className="flex">
@@ -462,14 +496,14 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
             </div>
           )}
           
-          {/* Vendor Selection Section */}
+          {/* Section 1: Select Vendor */}
           <div>
-            <h3 className="text-lg font-semibold mb-2">Select vendor</h3>
+            <h3 className="text-lg font-semibold mb-2">Select Vendor</h3>
             <p className="text-gray-500 text-sm mb-4">Choose an existing vendor or create a new one</p>
             
             <select
               id="vendor-select"
-              className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent"
+              className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent mb-4"
               value={selectedVendor?.id || ''}
               onChange={handleVendorSelect}
               disabled={isLoadingVendors}
@@ -485,26 +519,26 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
             
             <button
               type="button"
-              className="w-full mt-4 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded flex items-center justify-center"
+              className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded flex items-center justify-center"
             >
               <span className="mr-2">+</span> Create new vendor
             </button>
           </div>
           
-          {/* Payment Details Section */}
+          {/* Section 2: Vendor Payment Method */}
           <div className={`${!selectedVendor ? 'opacity-50 pointer-events-none' : ''}`}>
-            <h3 className="text-lg font-semibold mb-2">Payment details</h3>
+            <h3 className="text-lg font-semibold mb-2">Vendor Payment Method</h3>
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount <span className="text-red-500">*</span>
+                    Amount *
                   </label>
                   <input
                     type="text"
                     id="amount"
-                    className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent"
+                    className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
@@ -513,11 +547,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                 
                 <div>
                   <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
-                    Currency <span className="text-red-500">*</span>
+                    Currency *
                   </label>
                   <select
                     id="currency"
-                    className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent"
+                    className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
                     required
@@ -532,12 +566,12 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
               
               <div>
                 <label htmlFor="wallet-address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Wallet address <span className="text-red-500">*</span>
+                  Wallet address *
                 </label>
                 <input
                   type="text"
                   id="wallet-address"
-                  className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent"
+                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
                   required
@@ -546,11 +580,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
               
               <div>
                 <label htmlFor="network" className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment network <span className="text-red-500">*</span>
+                  Payment network *
                 </label>
                 <select
                   id="network"
-                  className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent"
+                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                   value={network}
                   onChange={(e) => setNetwork(e.target.value)}
                   required
@@ -561,38 +595,43 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   <option value="Solana">Solana</option>
                 </select>
               </div>
-              
+            </div>
+          </div>
+          
+          {/* Section 3: Payment Details */}
+          <div className={`${!selectedVendor ? 'opacity-50 pointer-events-none' : ''}`}>
+            <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
+            
+            <div className="space-y-4">
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                   Category
                 </label>
-                <div className="relative">
-                  <select
-                    id="category"
-                    className="w-full py-2 px-3 border-b border-gray-300 focus:outline-none focus:border-black bg-transparent appearance-none"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    <option value="">Select</option>
-                    <option value="Professional Services">Professional Services</option>
-                    <option value="Software & SaaS">Software &amp; SaaS</option>
-                    <option value="Marketing & Advertising">Marketing &amp; Advertising</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Office Supplies">Office Supplies</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
+                <select
+                  id="category"
+                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="">Select</option>
+                  <option value="Professional Services">Professional Services</option>
+                  <option value="Software & SaaS">Software &amp; SaaS</option>
+                  <option value="Marketing & Advertising">Marketing &amp; Advertising</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Office Supplies">Office Supplies</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               
               <div>
                 <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-1">
-                  Memo (Optional)
+                  Memo
                 </label>
                 <textarea
                   id="memo"
                   className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                   rows={3}
-                  placeholder="Additional notes about this payment..."
+                  placeholder="Additional notes about this payment"
                   value={memo}
                   onChange={(e) => setMemo(e.target.value)}
                 />
@@ -602,8 +641,20 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
             <div className="mt-8">
               <button
                 type="submit"
-                className={`w-full bg-black hover:bg-gray-800 text-white font-medium py-3 px-4 rounded ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full bg-black text-white font-medium py-3 px-4 rounded ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
                 disabled={!isFormComplete}
+                aria-disabled={!isFormComplete}
+                onClick={(e) => {
+                  if (!isFormComplete) {
+                    e.preventDefault();
+                    // Identify which fields are missing
+                    if (!selectedVendor) alert('Please select a vendor');
+                    else if (!amount.trim()) alert('Please enter an amount');
+                    else if (!currency) alert('Please select a currency');
+                    else if (!walletAddress.trim()) alert('Please enter a wallet address');
+                    else if (!network) alert('Please select a payment network');
+                  }
+                }}
               >
                 Review Payment
               </button>

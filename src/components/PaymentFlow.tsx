@@ -1,10 +1,13 @@
 'use client';
 
 import { Invoice, Vendor } from '@/types/supabase';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import WalletModal from './WalletModal';
+import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
+import { isAddress } from 'viem';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -40,7 +43,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Form fields
-  const [amount, setAmount] = useState<string>('');
+  const [amount, setAmount] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [network, setNetwork] = useState<string>('');
@@ -49,25 +52,49 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
-  
+  // Wallet modal state
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
+  const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
+
+  // Validate wallet address
+  const validateWalletAddress = (address: string) => {
+    if (!address) {
+      setIsAddressValid(null);
+      return;
+    }
+    
+    const isValid = isAddress(address);
+    setIsAddressValid(isValid);
+    return isValid;
+  };
+
+  // Handle wallet address change
+  const handleWalletAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setWalletAddress(value);
+    validateWalletAddress(value);
+  };
+
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
-    amount.trim() !== '' && 
+    amount !== 0 && 
     currency !== '' && 
     walletAddress.trim() !== '' && 
-    network !== '';  // Ensure network is required
+    network !== '' && 
+    isAddressValid === true;  // Ensure network is required
     
   // Debug validation state
   useEffect(() => {
     console.log('Validation state:', {
       selectedVendor: !!selectedVendor,
-      amount: amount.trim() !== '',
+      amount: amount !== 0,
       currency: currency !== '',
       walletAddress: walletAddress.trim() !== '',
       network: network !== '',
+      isAddressValid: isAddressValid,
       isFormComplete
     });
-  }, [selectedVendor, amount, currency, walletAddress, network, isFormComplete]);
+  }, [selectedVendor, amount, currency, walletAddress, network, isAddressValid, isFormComplete]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -88,8 +115,6 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
         const vendor = vendors.find(v => v.id === invoice.vendor_id);
         if (vendor) {
           setSelectedVendor(vendor);
-          if (vendor.wallet_address) setWalletAddress(vendor.wallet_address);
-          if (vendor.wallet_chain) setNetwork(vendor.wallet_chain);
         }
       }
     }
@@ -229,7 +254,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       return;
     }
     
-    if (!amount.trim()) {
+    if (!amount) {
       alert('Please enter an amount');
       return;
     }
@@ -249,6 +274,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       return;
     }
     
+    if (!isAddressValid) {
+      alert('Please enter a valid EVM wallet address');
+      return;
+    }
+    
     // If all validations pass, show the confirmation screen
     setShowConfirmation(true);
   };
@@ -258,42 +288,13 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
   
   const handleConfirmPayment = () => {
-    // This would handle the actual payment submission
-    // For now, it doesn't do anything as per requirements
-    console.log('Payment confirmed');
+    // Show wallet modal when user clicks "Confirm & Send Payment"
+    setShowWalletModal(true);
   };
   
-  // Calculate USD equivalent (mock implementation)
-  const usdEquivalent = useMemo(() => {
-    if (!amount || !currency) return '$0.00';
-    
-    // TODO: Replace with actual exchange rates
-    const rates: Record<string, number> = {
-      'ETH': 1800,
-      'USDC': 1,
-      'BTC': 45000
-    };
-    
-    const numericAmount = parseFloat(amount) || 0;
-    const rate = rates[currency] || 1;
-    const usdValue = numericAmount * rate;
-    
-    return `$${usdValue.toFixed(2)} (at rate: $${rate.toFixed(4)})`;
-  }, [amount, currency]);
-  
-  // Calculate gas fee (mock implementation)
-  const estimatedGasFee = useMemo(() => {
-    if (!network || !currency) return '$0.00';
-    
-    // Mock gas fees
-    const fees: Record<string, number> = {
-      'Ethereum': 0.015,
-      'Polygon': 0.001,
-      'Solana': 0.0001
-    };
-    
-    return `$${fees[network] || 0.01} USD`;
-  }, [network, currency]);
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex">
@@ -426,8 +427,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     <p className="text-gray-500 text-sm">{category || 'Professional services'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</p>
-                    <p className="text-gray-500 text-sm">{network.toLowerCase()}</p>
+                    <p className="font-mono">{walletAddress}</p>
+                    <p className="text-gray-500 text-sm">{network}</p>
                   </div>
                 </div>
               </div>
@@ -441,11 +442,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   </div>
                   <div className="flex justify-between">
                     <p>USD Equivalent:</p>
-                    <p>{usdEquivalent}</p>
+                    <p>TODO</p>
                   </div>
                   <div className="flex justify-between">
                     <p>Est. Gas Fee:</p>
-                    <p>{estimatedGasFee}</p>
+                    <p>TODO</p>
                   </div>
                 </div>
               </div>
@@ -536,11 +537,17 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     Amount *
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     id="amount"
                     className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Handle empty input as 0, otherwise convert to number
+                      // If conversion results in NaN, keep the previous value
+                      const numValue = value === '' ? 0 : Number(value);
+                      setAmount(isNaN(numValue) ? amount : numValue);
+                    }}
                     required
                   />
                 </div>
@@ -557,25 +564,42 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     required
                   >
                     <option value="">Select</option>
-                    <option value="ETH">ETH</option>
-                    <option value="USDC">USDC</option>
-                    <option value="BTC">BTC</option>
+                    {Object.values(getEnabledCryptocurrencies()).map((crypto) => (
+                      <option 
+                        key={crypto.symbol} 
+                        value={crypto.symbol}
+                        disabled={!crypto.isEnabled}
+                      >
+                        {crypto.symbol} - {crypto.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label htmlFor="wallet-address" className="block text-sm font-medium text-gray-700 mb-1">
                   Wallet address *
                 </label>
-                <input
-                  type="text"
-                  id="wallet-address"
-                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                  value={walletAddress}
-                  onChange={(e) => setWalletAddress(e.target.value)}
-                  required
-                />
+                <span className="text-gray-500">Only EVM wallets are supported</span>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="wallet-address"
+                    className={`w-full py-2 px-3 border rounded focus:outline-none focus:border-black bg-transparent
+                      ${isAddressValid === false ? 'border-red-500' : ''}
+                      ${isAddressValid === true ? 'border-green-500' : 'border-gray-300'}`}
+                    value={walletAddress}
+                    onChange={handleWalletAddressChange}
+                    placeholder="0x..."
+                    required
+                  />
+                  <div className="text-xs mt-1">
+                    {isAddressValid === false && (
+                      <p className="text-red-500 mt-1">Please enter a valid EVM wallet address</p>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div>
@@ -590,9 +614,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   required
                 >
                   <option value="">Select</option>
-                  <option value="Ethereum">Ethereum</option>
-                  <option value="Polygon">Polygon</option>
-                  <option value="Solana">Solana</option>
+                  {getEnabledNetworks().map((network) => (
+                    <option key={network.id} value={network.id}>
+                      {network.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -649,10 +675,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     e.preventDefault();
                     // Identify which fields are missing
                     if (!selectedVendor) alert('Please select a vendor');
-                    else if (!amount.trim()) alert('Please enter an amount');
+                    else if (!amount) alert('Please enter an amount');
                     else if (!currency) alert('Please select a currency');
                     else if (!walletAddress.trim()) alert('Please enter a wallet address');
                     else if (!network) alert('Please select a payment network');
+                    else if (!isAddressValid) alert('Please enter a valid EVM wallet address');
                   }
                 }}
               >
@@ -663,6 +690,16 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
           </form>
         )}
       </div>
+      
+      {/* Wallet Modal */}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={handleCloseWalletModal} 
+        vendorAddress={walletAddress}
+        vendorNetwork={network}
+        amount={amount}
+        tokenSymbol={currency}
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import WalletModal from './WalletModal';
 import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
+import { isAddress } from 'viem';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -53,13 +54,34 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   // Wallet modal state
   const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
-  
+  const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
+
+  // Validate wallet address
+  const validateWalletAddress = (address: string) => {
+    if (!address) {
+      setIsAddressValid(null);
+      return;
+    }
+    
+    const isValid = isAddress(address);
+    setIsAddressValid(isValid);
+    return isValid;
+  };
+
+  // Handle wallet address change
+  const handleWalletAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setWalletAddress(value);
+    validateWalletAddress(value);
+  };
+
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
     amount !== 0 && 
     currency !== '' && 
     walletAddress.trim() !== '' && 
-    network !== '';  // Ensure network is required
+    network !== '' && 
+    isAddressValid === true;  // Ensure network is required
     
   // Debug validation state
   useEffect(() => {
@@ -69,9 +91,10 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       currency: currency !== '',
       walletAddress: walletAddress.trim() !== '',
       network: network !== '',
+      isAddressValid: isAddressValid,
       isFormComplete
     });
-  }, [selectedVendor, amount, currency, walletAddress, network, isFormComplete]);
+  }, [selectedVendor, amount, currency, walletAddress, network, isAddressValid, isFormComplete]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -92,8 +115,6 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
         const vendor = vendors.find(v => v.id === invoice.vendor_id);
         if (vendor) {
           setSelectedVendor(vendor);
-          if (vendor.wallet_address) setWalletAddress(vendor.wallet_address);
-          if (vendor.wallet_chain) setNetwork(vendor.wallet_chain);
         }
       }
     }
@@ -253,6 +274,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       return;
     }
     
+    if (!isAddressValid) {
+      alert('Please enter a valid EVM wallet address');
+      return;
+    }
+    
     // If all validations pass, show the confirmation screen
     setShowConfirmation(true);
   };
@@ -402,7 +428,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   </div>
                   <div className="text-right">
                     <p className="font-mono">{walletAddress}</p>
-                    <p className="text-gray-500 text-sm">{network.toLowerCase()}</p>
+                    <p className="text-gray-500 text-sm">{network}</p>
                   </div>
                 </div>
               </div>
@@ -555,14 +581,25 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                 <label htmlFor="wallet-address" className="block text-sm font-medium text-gray-700 mb-1">
                   Wallet address *
                 </label>
-                <input
-                  type="text"
-                  id="wallet-address"
-                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                  value={walletAddress}
-                  onChange={(e) => setWalletAddress(e.target.value)}
-                  required
-                />
+                <span className="text-gray-500">Only EVM wallets are supported</span>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="wallet-address"
+                    className={`w-full py-2 px-3 border rounded focus:outline-none focus:border-black bg-transparent
+                      ${isAddressValid === false ? 'border-red-500' : ''}
+                      ${isAddressValid === true ? 'border-green-500' : 'border-gray-300'}`}
+                    value={walletAddress}
+                    onChange={handleWalletAddressChange}
+                    placeholder="0x..."
+                    required
+                  />
+                  <div className="text-xs mt-1">
+                    {isAddressValid === false && (
+                      <p className="text-red-500 mt-1">Please enter a valid EVM wallet address</p>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div>
@@ -642,6 +679,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     else if (!currency) alert('Please select a currency');
                     else if (!walletAddress.trim()) alert('Please enter a wallet address');
                     else if (!network) alert('Please select a payment network');
+                    else if (!isAddressValid) alert('Please enter a valid EVM wallet address');
                   }
                 }}
               >

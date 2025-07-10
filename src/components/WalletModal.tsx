@@ -92,7 +92,7 @@ export default function WalletModal({
         ...contract,
         functionName: 'transfer',
         args: [vendorAddress as `0x${string}`, tokenAmount],
-        account: await walletClient.getAddresses().then(addresses => addresses[0]),
+        account: primaryWallet.address as `0x${string}`,
       });
 
       const hash = await walletClient.writeContract(request);

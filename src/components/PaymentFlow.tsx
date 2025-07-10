@@ -219,30 +219,19 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     fileInputRef.current?.click();
   };
   
-  const handleVendorSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleVendorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const vendorId = e.target.value;
     if (!vendorId) {
       setSelectedVendor(null);
-      setWalletAddress('');
-      setNetwork('');
       return;
     }
     
     const vendor = vendors.find(v => v.id === vendorId);
     setSelectedVendor(vendor || null);
     
-    // Pre-fill wallet address and network if vendor has them
-    if (vendor?.wallet_address) {
-      setWalletAddress(vendor.wallet_address);
-    } else {
-      setWalletAddress('');
-    }
-    
-    if (vendor?.wallet_chain) {
-      setNetwork(vendor.wallet_chain);
-    } else {
-      setNetwork('');
-    }
+    // Clear wallet address and network when vendor changes
+    setWalletAddress('');
+    setNetwork('');
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -506,7 +495,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
               id="vendor-select"
               className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent mb-4"
               value={selectedVendor?.id || ''}
-              onChange={handleVendorSelect}
+              onChange={handleVendorChange}
               disabled={isLoadingVendors}
               required
             >

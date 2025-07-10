@@ -127,14 +127,11 @@ export default function VendorsTab() {
             <table className="min-w-full divide-y divide-gray-200 border-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vendor
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Preferred Wallet Address
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Chain
+                    Email
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                     Actions
@@ -144,7 +141,7 @@ export default function VendorsTab() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {vendors.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                    <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                       No vendors found. Add your first vendor to get started.
                     </td>
                   </tr>
@@ -153,40 +150,9 @@ export default function VendorsTab() {
                     <tr key={vendor.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{vendor.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{vendor.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {vendor.wallet_address ? (
-                          <div className="flex items-center">
-                            <span className="text-sm text-gray-900">
-                              {`${vendor.wallet_address.substring(0, 6)}...${vendor.wallet_address.substring(vendor.wallet_address.length - 4)}`}
-                            </span>
-                            <button 
-                              className="ml-2 text-gray-400 hover:text-gray-600"
-                              onClick={() => {
-                                if (vendor.wallet_address) {
-                                  navigator.clipboard.writeText(vendor.wallet_address);
-                                }
-                              }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">Not set</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {vendor.wallet_chain ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                            {vendor.wallet_chain}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-500">Not set</span>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end">

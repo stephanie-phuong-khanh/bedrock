@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import WalletModal from './WalletModal';
+import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -432,7 +433,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     <p className="text-gray-500 text-sm">{category || 'Professional services'}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono">{walletAddress.substring(0, 6)}...{walletAddress.substring(walletAddress.length - 4)}</p>
+                    <p className="font-mono">{walletAddress}</p>
                     <p className="text-gray-500 text-sm">{network.toLowerCase()}</p>
                   </div>
                 </div>
@@ -569,13 +570,19 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     required
                   >
                     <option value="">Select</option>
-                    <option value="ETH">ETH</option>
-                    <option value="USDC">USDC</option>
-                    <option value="BTC">BTC</option>
+                    {Object.values(getEnabledCryptocurrencies()).map((crypto) => (
+                      <option 
+                        key={crypto.symbol} 
+                        value={crypto.symbol}
+                        disabled={!crypto.isEnabled}
+                      >
+                        {crypto.symbol} - {crypto.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
-              
+
               <div>
                 <label htmlFor="wallet-address" className="block text-sm font-medium text-gray-700 mb-1">
                   Wallet address *
@@ -602,9 +609,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   required
                 >
                   <option value="">Select</option>
-                  <option value="Ethereum">Ethereum</option>
-                  <option value="Polygon">Polygon</option>
-                  <option value="Solana">Solana</option>
+                  {getEnabledNetworks().map((network) => (
+                    <option key={network.id} value={network.id}>
+                      {network.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -680,8 +689,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       <WalletModal 
         isOpen={showWalletModal} 
         onClose={handleCloseWalletModal} 
-        toAddress={walletAddress}
-        network={network}
+        vendorAddress={walletAddress}
+        vendorNetwork={network}
         amount={amount}
         tokenSymbol={currency}
       />

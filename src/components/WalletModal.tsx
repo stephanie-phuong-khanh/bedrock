@@ -4,25 +4,28 @@ import { useEffect, useRef, useState } from 'react';
 import { DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
+import { 
+  CRYPTOCURRENCIES, 
+  getTokenContractAddress,
+	getBlockExplorerUrl,
+} from '../constants/crypto';
 
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
-  toAddress: string; // vendor wallet address
-  network: string; // vendor wallet network
+  vendorAddress: string; // vendor wallet address
+  vendorNetwork: string; // vendor wallet network
   amount: number;    // in token units
   tokenSymbol: string; // e.g. 'USDC'
-  tokenDecimals?: number; // optional, default 6
 }
 
 export default function WalletModal({
     isOpen,
     onClose,
-    toAddress,
-    network,
+    vendorAddress,
+    vendorNetwork,
     amount,
     tokenSymbol,
-    tokenDecimals = 6,
 }: WalletModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const { primaryWallet, handleLogOut } = useDynamicContext();
@@ -57,71 +60,54 @@ export default function WalletModal({
     try {
       setIsProcessing(true);
       setError(null);
-      
-      // Get wallet clients from Dynamic SDK
+
       const publicClient = await primaryWallet.getPublicClient();
       const walletClient = await primaryWallet.getWalletClient();
 
-      // Only USDC is supported for now
-      if (tokenSymbol !== 'USDC') {
+      if (!CRYPTOCURRENCIES[tokenSymbol]?.isEnabled) {
         setError(`Token transfers for ${tokenSymbol} not implemented yet`);
         setIsProcessing(false);
         return;
       }
 
-			// For USDC transfers, we need to interact with the USDC contract
-			
-			// USDC contract addresses (use the correct one for your network)
-			const usdcContractAddresses: Record<string, `0x${string}`> = {
-				'ethereum': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as `0x${string}`, // Ethereum Mainnet
-				// 'polygon': '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' as `0x${string}`, // Polygon Mainnet
-				// 'arbitrum': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8' as `0x${string}`, // Arbitrum
-				// Add more networks as needed
-			};
+      // Get the contract address for the current network
+      const contractAddress = getTokenContractAddress(tokenSymbol, vendorNetwork);
+      
+      if (!contractAddress) {
+        setError(`${tokenSymbol} contract not configured for network: ${vendorNetwork}`);
+        setIsProcessing(false);
+        return;
+      }
+      
+      const contract = {
+        address: contractAddress,
+        abi: erc20Abi,
+      };
 
-			// Get the contract address for the current network
-			const contractAddress = usdcContractAddresses[network.toLowerCase()];
-			
-			if (!contractAddress) {
-				setError(`USDC contract not configured for network: ${network}`);
-				setIsProcessing(false);
-				return;
-			}
-			
-			// Create a contract instance
-			const contract = {
-				address: contractAddress,
-				abi: erc20Abi,
-			};
-			
-			// Calculate the amount with proper decimals
-			const tokenAmount = parseUnits(amount.toString(), tokenDecimals);
-			
-			// Prepare the contract write parameters
-			const { request } = await publicClient.simulateContract({
-				...contract,
-				functionName: 'transfer',
-				args: [toAddress as `0x${string}`, tokenAmount],
-				account: await walletClient.getAddresses().then(addresses => addresses[0]),
-			});
-			
-			// Send the transaction
-			const hash = await walletClient.writeContract(request);
-      
+      // Get token decimals from constants
+      const tokenDecimals = CRYPTOCURRENCIES[tokenSymbol].decimals;
+      const tokenAmount = parseUnits(amount.toString(), tokenDecimals);
+
+      const { request } = await publicClient.simulateContract({
+        ...contract,
+        functionName: 'transfer',
+        args: [vendorAddress as `0x${string}`, tokenAmount],
+        account: await walletClient.getAddresses().then(addresses => addresses[0]),
+      });
+
+      const hash = await walletClient.writeContract(request);
+
       setTxHash(hash);
-      
-      // Wait for transaction receipt
       console.log('Transaction sent, hash:', hash);
       const receipt = await publicClient.waitForTransactionReceipt({
         hash,
       });
-      
       console.log('Transaction confirmed:', receipt);
-      
-      // Close modal after successful transaction
+
       setTimeout(() => {
         onClose();
       }, 2000);
+
     } catch (err) {
       console.error('Payment error:', err);
       setError(err instanceof Error ? err.message : 'Transaction failed');
@@ -170,11 +156,11 @@ export default function WalletModal({
             <div className="text-sm space-y-2">
               <div>
                 <strong>To:</strong>{' '}
-                <span className="font-mono">{toAddress}</span>
+                <span className="font-mono">{vendorAddress}</span>
               </div>
               <div>
                 <strong>Network:</strong>{' '}
-                <span className="font-mono">{network}</span>
+                <span className="font-mono">{vendorNetwork}</span>
               </div>
             </div>
 
@@ -183,15 +169,30 @@ export default function WalletModal({
             </div>
 
             {/* Transaction status */}
-            {txHash && (
-              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                <p className="text-sm text-green-700">Transaction sent!</p>
-                <p className="text-xs font-mono text-green-600 truncate">
-                  Hash: {txHash}
-                </p>
+            {isProcessing && (
+              <div className="text-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-2">Processing payment...</p>
               </div>
             )}
             
+            {/* Transaction hash display for debugging */}
+            {txHash && (
+              <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <p className="text-sm font-medium text-gray-700">Transaction Hash:</p>
+                <p className="text-xs font-mono break-all mt-1">{txHash}</p>
+                <a 
+                  href={getBlockExplorerUrl(vendorNetwork, txHash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline text-sm mt-2 inline-block"
+                >
+                  View on Etherscan
+                </a>
+              </div>
+            )}
+
+            {/* Error message */}
             {error && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
                 <p className="text-sm text-red-700">{error}</p>

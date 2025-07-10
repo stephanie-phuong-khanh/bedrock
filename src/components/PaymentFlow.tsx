@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import WalletModal from './WalletModal';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -40,7 +41,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Form fields
-  const [amount, setAmount] = useState<string>('');
+  const [amount, setAmount] = useState<number>(0);
   const [currency, setCurrency] = useState<string>('');
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [network, setNetwork] = useState<string>('');
@@ -49,10 +50,12 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  // Wallet modal state
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
   
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
-    amount.trim() !== '' && 
+    amount !== 0 && 
     currency !== '' && 
     walletAddress.trim() !== '' && 
     network !== '';  // Ensure network is required
@@ -61,7 +64,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   useEffect(() => {
     console.log('Validation state:', {
       selectedVendor: !!selectedVendor,
-      amount: amount.trim() !== '',
+      amount: amount !== 0,
       currency: currency !== '',
       walletAddress: walletAddress.trim() !== '',
       network: network !== '',
@@ -229,7 +232,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       return;
     }
     
-    if (!amount.trim()) {
+    if (!amount) {
       alert('Please enter an amount');
       return;
     }
@@ -258,9 +261,12 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
   
   const handleConfirmPayment = () => {
-    // This would handle the actual payment submission
-    // For now, it doesn't do anything as per requirements
-    console.log('Payment confirmed');
+    // Show wallet modal when user clicks "Confirm & Send Payment"
+    setShowWalletModal(true);
+  };
+  
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
   };
   
   // Calculate USD equivalent (mock implementation)
@@ -274,7 +280,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       'BTC': 45000
     };
     
-    const numericAmount = parseFloat(amount) || 0;
+    const numericAmount = amount || 0;
     const rate = rates[currency] || 1;
     const usdValue = numericAmount * rate;
     
@@ -285,7 +291,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const estimatedGasFee = useMemo(() => {
     if (!network || !currency) return '$0.00';
     
-    // Mock gas fees
+    // TODO: Replace with actual gas fees
     const fees: Record<string, number> = {
       'Ethereum': 0.015,
       'Polygon': 0.001,
@@ -536,11 +542,17 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     Amount *
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     id="amount"
                     className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Handle empty input as 0, otherwise convert to number
+                      // If conversion results in NaN, keep the previous value
+                      const numValue = value === '' ? 0 : Number(value);
+                      setAmount(isNaN(numValue) ? amount : numValue);
+                    }}
                     required
                   />
                 </div>
@@ -649,7 +661,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                     e.preventDefault();
                     // Identify which fields are missing
                     if (!selectedVendor) alert('Please select a vendor');
-                    else if (!amount.trim()) alert('Please enter an amount');
+                    else if (!amount) alert('Please enter an amount');
                     else if (!currency) alert('Please select a currency');
                     else if (!walletAddress.trim()) alert('Please enter a wallet address');
                     else if (!network) alert('Please select a payment network');
@@ -663,6 +675,16 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
           </form>
         )}
       </div>
+      
+      {/* Wallet Modal */}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={handleCloseWalletModal} 
+        toAddress={walletAddress}
+        network={network}
+        amount={amount}
+        tokenSymbol={currency}
+      />
     </div>
   );
 }

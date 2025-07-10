@@ -1,7 +1,7 @@
 'use client';
 
 import { Invoice, Vendor } from '@/types/supabase';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -269,38 +269,6 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const handleCloseWalletModal = () => {
     setShowWalletModal(false);
   };
-  
-  // Calculate USD equivalent (mock implementation)
-  const usdEquivalent = useMemo(() => {
-    if (!amount || !currency) return '$0.00';
-    
-    // TODO: Replace with actual exchange rates
-    const rates: Record<string, number> = {
-      'ETH': 1800,
-      'USDC': 1,
-      'BTC': 45000
-    };
-    
-    const numericAmount = amount || 0;
-    const rate = rates[currency] || 1;
-    const usdValue = numericAmount * rate;
-    
-    return `$${usdValue.toFixed(2)} (at rate: $${rate.toFixed(4)})`;
-  }, [amount, currency]);
-  
-  // Calculate gas fee (mock implementation)
-  const estimatedGasFee = useMemo(() => {
-    if (!network || !currency) return '$0.00';
-    
-    // TODO: Replace with actual gas fees
-    const fees: Record<string, number> = {
-      'Ethereum': 0.015,
-      'Polygon': 0.001,
-      'Solana': 0.0001
-    };
-    
-    return `$${fees[network] || 0.01} USD`;
-  }, [network, currency]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex">
@@ -448,11 +416,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                   </div>
                   <div className="flex justify-between">
                     <p>USD Equivalent:</p>
-                    <p>{usdEquivalent}</p>
+                    <p>TODO</p>
                   </div>
                   <div className="flex justify-between">
                     <p>Est. Gas Fee:</p>
-                    <p>{estimatedGasFee}</p>
+                    <p>TODO</p>
                   </div>
                 </div>
               </div>

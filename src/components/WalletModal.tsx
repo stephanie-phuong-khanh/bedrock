@@ -24,8 +24,8 @@ interface WalletModalProps {
 export default function WalletModal({
     isOpen,
     onClose,
-		// vendorId,
-		// invoiceId,
+		vendorId,
+		invoiceId,
     vendorAddress,
     vendorNetwork,
     amount,
@@ -112,42 +112,39 @@ export default function WalletModal({
 			const confirmedAt = new Date(Number(block.timestamp) * 1000);
 			console.log('Transaction confirmed at:', confirmedAt);
 
-			// TODO: Create Supabase payment record
-			// try {
-			// 	const { data, error } = await supabase
-			// 		.from('payments')
-			// 		.insert([
-			// 			{
-			// 				user_id: session.user.id,
-			// 				vendor_id: vendorId,
-			// 				invoice_id: invoiceId,
-			// 				amount: amount,
-			// 				currency: tokenSymbol,
-			// 				payment_network: vendorNetwork,
-			// 				sender_wallet_address: primaryWallet.address,
-			// 				receiver_wallet_address: vendorAddress,
-			// 				tx_hash: hash,
-			// 				confirmed_at: confirmedAt,
-			// 			},
-			// 		])
-			// 		.select();
+      const paymentData = {
+        vendor_id: vendorId,
+        invoice_id: invoiceId,
+        amount: amount,
+        currency: tokenSymbol,
+        payment_network: vendorNetwork,
+        sender_wallet_address: primaryWallet.address,
+        receiver_wallet_address: vendorAddress,
+        tx_hash: hash,
+        confirmed_at: confirmedAt,
+      };
 
-			// 	if (error) {
-			// 		console.error('Error creating payment record:', error);
-			// 		setError(`Transaction succeeded but failed to record payment: ${error.message}`);
-			// 	} else {
-			// 		console.log('Payment record created:', data);
-					
-			// 		// Close modal after successful payment and record creation
-			// 		setTimeout(() => {
-			// 			onClose();
-			// 		}, 2000);
-			// 	}
-			// } catch (dbError) {
-			// 	console.error('Exception creating payment record:', dbError);
-			// 	setError(`Transaction succeeded but failed to record payment due to an exception`);
-			// }
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies with the request
+        body: JSON.stringify(paymentData),
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to record payment');
+      }
+
+      const data = await response.json();
+      console.log('Payment record created:', data);
+
+      // Close modal after successful payment and record creation
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (err) {
       console.error('Payment error:', err);
       setError(err instanceof Error ? err.message : 'Transaction failed');

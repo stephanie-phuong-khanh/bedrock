@@ -5,6 +5,7 @@ import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
+import PaymentsTab from './PaymentsTab';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
 import PaymentFlow from './PaymentFlow';
@@ -308,7 +309,7 @@ export default function DashboardView() {
           <div className="p-8">
             {activeTab === 'payments' && (
               <div className="min-h-[400px]">
-                {/* Payments content will go here */}
+                <PaymentsTab />
               </div>
             )}
             

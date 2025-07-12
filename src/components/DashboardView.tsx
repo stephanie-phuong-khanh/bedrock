@@ -5,7 +5,7 @@ import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import VendorsTab from './VendorsTab';
-import { uploadInvoice, deleteInvoice } from '@/lib/invoice-utils';
+import { uploadInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
 import PaymentFlow from './PaymentFlow';
 
@@ -102,10 +102,9 @@ export default function DashboardView() {
     setUploadError(null);
     
     try {
-      const invoice = await uploadInvoice(file, session.userId);
-      
+      const invoice = await uploadInvoice(file);
+
       if (invoice) {
-        // Close the modal and show the full-screen invoice viewer
         setShowPayBillModal(false);
         setCurrentInvoice(invoice);
       } else {
@@ -133,27 +132,23 @@ export default function DashboardView() {
     setShowInvoiceUpload(true);
   };
   
-  // Handle invoice deletion
   const handleInvoiceDelete = async (invoiceId: string) => {
     if (!session?.userId || !currentInvoice) return;
     
     try {
-      // Extract the file path from the URL
-      // The filePath should be in the format userId/filename
-      // We can extract it from the file_url by removing the base URL and query parameters
-      const url = new URL(currentInvoice.file_url);
-      const pathParts = url.pathname.split('/');
-      const filePath = pathParts.slice(pathParts.length - 2).join('/');
-      
-      const success = await deleteInvoice(invoiceId, filePath, session.userId);
-      
-      if (success) {
-        // Reset state to show upload interface
-        setCurrentInvoice(null);
-        setShowInvoiceUpload(true);
-      } else {
-        console.error('Failed to delete invoice');
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+        credentials: 'include', // Include cookies with the request
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error deleting invoice:', errorData);
+        return;
       }
+
+      setCurrentInvoice(null);
+      setShowInvoiceUpload(true);
     } catch (error) {
       console.error('Error deleting invoice:', error);
     }
@@ -333,12 +328,7 @@ export default function DashboardView() {
           onClose={closePaymentFlow}
           onDelete={handleInvoiceDelete}
           onUploadInvoice={async (file: File) => {
-            if (!session?.userId) {
-              throw new Error('You must be logged in to upload invoices');
-            }
-            
-            const invoice = await uploadInvoice(file, session.userId);
-            
+            const invoice = await uploadInvoice(file);
             if (invoice) {
               setCurrentInvoice(invoice);
               setShowInvoiceUpload(false);

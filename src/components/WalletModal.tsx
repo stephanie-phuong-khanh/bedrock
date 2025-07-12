@@ -13,6 +13,8 @@ import {
 interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
+  vendorId: string;
+	invoiceId?: string | null;
   vendorAddress: string; // vendor wallet address
   vendorNetwork: string; // vendor wallet network
   amount: number;    // in token units
@@ -22,6 +24,8 @@ interface WalletModalProps {
 export default function WalletModal({
     isOpen,
     onClose,
+		// vendorId,
+		// invoiceId,
     vendorAddress,
     vendorNetwork,
     amount,
@@ -104,9 +108,45 @@ export default function WalletModal({
       });
       console.log('Transaction confirmed:', receipt);
 
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+			const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
+			const confirmedAt = new Date(Number(block.timestamp) * 1000);
+			console.log('Transaction confirmed at:', confirmedAt);
+
+			// TODO: Create Supabase payment record
+			// try {
+			// 	const { data, error } = await supabase
+			// 		.from('payments')
+			// 		.insert([
+			// 			{
+			// 				user_id: session.user.id,
+			// 				vendor_id: vendorId,
+			// 				invoice_id: invoiceId,
+			// 				amount: amount,
+			// 				currency: tokenSymbol,
+			// 				payment_network: vendorNetwork,
+			// 				sender_wallet_address: primaryWallet.address,
+			// 				receiver_wallet_address: vendorAddress,
+			// 				tx_hash: hash,
+			// 				confirmed_at: confirmedAt,
+			// 			},
+			// 		])
+			// 		.select();
+
+			// 	if (error) {
+			// 		console.error('Error creating payment record:', error);
+			// 		setError(`Transaction succeeded but failed to record payment: ${error.message}`);
+			// 	} else {
+			// 		console.log('Payment record created:', data);
+					
+			// 		// Close modal after successful payment and record creation
+			// 		setTimeout(() => {
+			// 			onClose();
+			// 		}, 2000);
+			// 	}
+			// } catch (dbError) {
+			// 	console.error('Exception creating payment record:', dbError);
+			// 	setError(`Transaction succeeded but failed to record payment due to an exception`);
+			// }
 
     } catch (err) {
       console.error('Payment error:', err);
@@ -187,7 +227,7 @@ export default function WalletModal({
                   rel="noopener noreferrer"
                   className="text-blue-500 hover:underline text-sm mt-2 inline-block"
                 >
-                  View on Etherscan
+                  View transaction
                 </a>
               </div>
             )}

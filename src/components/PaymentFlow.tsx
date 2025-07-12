@@ -2,9 +2,6 @@
 
 import { Invoice, Vendor } from '@/types/supabase';
 import { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
-import { Session } from 'next-auth';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import WalletModal from './WalletModal';
 import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
 import { isAddress } from 'viem';
@@ -16,20 +13,7 @@ interface PaymentFlowProps {
   onDelete?: (invoiceId: string) => Promise<void>;
 }
 
-// Extend the Session type to include the id property on the user object
-interface CustomSession extends Session {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  }
-}
-
 export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete }: PaymentFlowProps) {
-  const { data: session } = useSession() as { data: CustomSession | null };
-  const supabase = createClientComponentClient();
-  
   // Invoice viewer states
   const [isPdf, setIsPdf] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -123,20 +107,21 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   // Fetch vendors on component mount
   useEffect(() => {
     async function fetchVendors() {
-      if (!session?.user?.id) return;
-      
       try {
         setIsLoadingVendors(true);
-        const { data, error } = await supabase
-          .from('vendors')
-          .select('*')
-          .eq('user_id', session.user.id);
-          
-        if (error) {
-          throw error;
+        
+        // Use the new API endpoint instead of direct Supabase access
+        const response = await fetch('/api/vendors', {
+          credentials: 'include', // Include cookies with the request
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to load vendors');
         }
         
-        setVendors(data || []);
+        const data = await response.json();
+        setVendors(data.vendors || []);
       } catch (err: unknown) {
         console.error('Error fetching vendors:', err);
         setErrorMessage(err instanceof Error ? err.message : 'Failed to load vendors');
@@ -146,7 +131,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     }
     
     fetchVendors();
-  }, [session, supabase]);
+  }, []);
   
   // Set up drag and drop event handlers
   useEffect(() => {
@@ -681,14 +666,18 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       </div>
       
       {/* Wallet Modal */}
-      <WalletModal 
-        isOpen={showWalletModal} 
-        onClose={handleCloseWalletModal} 
-        vendorAddress={walletAddress}
-        vendorNetwork={network}
-        amount={amount}
-        tokenSymbol={currency}
-      />
+      {(selectedVendor && amount && currency && walletAddress && network && isAddressValid) && (
+        <WalletModal 
+          isOpen={showWalletModal} 
+          onClose={handleCloseWalletModal} 
+          vendorId={selectedVendor.id}
+          invoiceId={invoice?.id}
+          vendorAddress={walletAddress}
+          vendorNetwork={network}
+          amount={amount}
+          tokenSymbol={currency}
+        />
+      )}
     </div>
   );
 }

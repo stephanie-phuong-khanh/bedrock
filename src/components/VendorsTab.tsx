@@ -1,24 +1,10 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Vendor } from '@/types/supabase';
 import VendorForm from './VendorForm';
-import { Session } from 'next-auth';
-
-// Extend the Session type to include the id property on the user object
-interface CustomSession extends Session {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  }
-}
 
 export default function VendorsTab() {
-  const { data: session } = useSession() as { data: CustomSession | null };
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
@@ -27,26 +13,27 @@ export default function VendorsTab() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [vendorToDelete, setVendorToDelete] = useState<Vendor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const supabase = createClientComponentClient();
-  
+
   const loadVendors = useCallback(async () => {
-    if (!session?.user?.id) return;
-    
     try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      setVendors(data || []);
+      setIsLoading(true);
+      const response = await fetch('/api/vendors', {
+        credentials: 'include', // Include cookies with the request
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load vendors');
+      }
+      
+      const data = await response.json();
+      setVendors(data.vendors || []);
     } catch (error) {
       console.error('Error loading vendors:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [session, supabase]);
+  }, []);
   
   useEffect(() => {
     loadVendors();
@@ -71,17 +58,22 @@ export default function VendorsTab() {
   };
   
   const handleDeleteConfirm = async () => {
-    if (!vendorToDelete || !session?.user?.id) return;
+    if (!vendorToDelete) return;
     
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('vendors')
-        .delete()
-        .eq('id', vendorToDelete.id)
-        .eq('user_id', session.user.id); // Security check
-        
-      if (error) throw error;
+      const response = await fetch(`/api/vendors/${vendorToDelete.id}`, {
+        method: 'DELETE',
+        credentials: 'include', // Include cookies with the request
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete vendor');
+      }
       
       // Refresh the vendors list
       loadVendors();

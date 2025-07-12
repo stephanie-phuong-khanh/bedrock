@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { NewVendor, Vendor } from '@/types/supabase';
-import type { Session } from 'next-auth';
+import type { Vendor } from '@/types/supabase';
 
 interface VendorFormProps {
   onSuccess?: () => void;
@@ -13,9 +10,7 @@ interface VendorFormProps {
 }
 
 export default function VendorForm({ onSuccess, vendor, isEditing = false }: VendorFormProps) {
-  const { data: session } = useSession() as { data: Session | null };
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const supabase = createClientComponentClient();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -42,26 +37,27 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!session?.user?.id) {
-      alert('You must be logged in to manage vendors');
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
       if (isEditing && vendor) {
         // Update existing vendor
-        const { error } = await supabase
-          .from('vendors')
-          .update({
+        const response = await fetch(`/api/vendors/${vendor.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies with the request
+          body: JSON.stringify({
             name: formData.name,
             email: formData.email,
-          })
-          .eq('id', vendor.id)
-          .eq('user_id', session.user.id); // Security check
-          
-        if (error) throw error;
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update vendor');
+        }
         
         // Call the onSuccess callback if provided
         if (onSuccess) {
@@ -71,20 +67,24 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
         }
       } else {
         // Create new vendor
-        const newVendor: NewVendor = {
-          user_id: session.user.id,
+        const newVendor = {
           name: formData.name,
           email: formData.email,
-          wallet_address: null,
-          wallet_chain: null,
-          tax_file_url: null,
         };
         
-        const { error } = await supabase
-          .from('vendors')
-          .insert([newVendor]);
-          
-        if (error) throw error;
+        const response = await fetch('/api/vendors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include cookies with the request
+          body: JSON.stringify(newVendor),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create vendor');
+        }
         
         // Reset form and show success
         setFormData({

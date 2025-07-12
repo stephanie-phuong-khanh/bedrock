@@ -9,18 +9,9 @@ import { uploadInvoice, deleteInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
 import PaymentFlow from './PaymentFlow';
 
-// Extend the Session type to include the id property on the user object
-interface CustomSession extends Session {
-  user: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  }
-}
-
 export default function DashboardView() {
-  const { data: session } = useSession() as { data: CustomSession | null };
+  const { data: session } = useSession() as { data: Session | null };
+
   const [activeTab, setActiveTab] = useState('payments');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
@@ -102,7 +93,7 @@ export default function DashboardView() {
       return;
     }
     
-    if (!session?.user?.id) {
+    if (!session?.userId) {
       setUploadError('You must be logged in to upload invoices');
       return;
     }
@@ -111,7 +102,7 @@ export default function DashboardView() {
     setUploadError(null);
     
     try {
-      const invoice = await uploadInvoice(file, session.user.id);
+      const invoice = await uploadInvoice(file, session.userId);
       
       if (invoice) {
         // Close the modal and show the full-screen invoice viewer
@@ -144,7 +135,7 @@ export default function DashboardView() {
   
   // Handle invoice deletion
   const handleInvoiceDelete = async (invoiceId: string) => {
-    if (!session?.user?.id || !currentInvoice) return;
+    if (!session?.userId || !currentInvoice) return;
     
     try {
       // Extract the file path from the URL
@@ -154,7 +145,7 @@ export default function DashboardView() {
       const pathParts = url.pathname.split('/');
       const filePath = pathParts.slice(pathParts.length - 2).join('/');
       
-      const success = await deleteInvoice(invoiceId, filePath, session.user.id);
+      const success = await deleteInvoice(invoiceId, filePath, session.userId);
       
       if (success) {
         // Reset state to show upload interface
@@ -342,11 +333,11 @@ export default function DashboardView() {
           onClose={closePaymentFlow}
           onDelete={handleInvoiceDelete}
           onUploadInvoice={async (file: File) => {
-            if (!session?.user?.id) {
+            if (!session?.userId) {
               throw new Error('You must be logged in to upload invoices');
             }
             
-            const invoice = await uploadInvoice(file, session.user.id);
+            const invoice = await uploadInvoice(file, session.userId);
             
             if (invoice) {
               setCurrentInvoice(invoice);

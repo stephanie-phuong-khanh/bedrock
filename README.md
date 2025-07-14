@@ -29,6 +29,10 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # Ask for access to the `bedrock-dev` Supabase project
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Dynamic (https://app.dynamic.xyz/)
+# Ask for access to the `bedrock-dev` Dynamic project
+NEXT_PUBLIC_DYNAMIC_ENV_ID=your-dynamic-env-id
 ```
 
 ### Installation and Running
@@ -49,6 +53,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 - **Vercel**: Request access to the `bedrock` Vercel project
 - **Supabase**: Request access to the `bedrock-prod` Supabase project
+- **Dynamic**: Request access to the `bedrock` Dynamic project
 
 ### Deployment Process
 

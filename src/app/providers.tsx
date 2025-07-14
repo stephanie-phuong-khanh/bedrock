@@ -12,7 +12,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <SessionProvider>
       <DynamicContextProvider
         settings={{
-          environmentId: process.env.NEXT_PUBLIC_DYNAMIC_SANDBOX_ENV_ID || "",
+          environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENV_ID || "",
           walletConnectors: [EthereumWalletConnectors],
         }}
       >

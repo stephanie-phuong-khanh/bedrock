@@ -1,10 +1,10 @@
 'use client';
 
-import { Invoice, Vendor } from '@/types/supabase';
 import { useState, useEffect, useRef } from 'react';
-import WalletModal from './WalletModal';
-import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
 import { isAddress } from 'viem';
+import { Invoice, Vendor } from '@/types/supabase';
+import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
+import WalletModal from './WalletModal';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;

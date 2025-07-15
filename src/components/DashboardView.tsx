@@ -1,18 +1,20 @@
 'use client';
 
-import { signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import VendorsTab from './VendorsTab';
-import PaymentsTab from './PaymentsTab';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { Invoice } from '@/types/supabase';
+import VendorsTab from './VendorsTab';
+import PaymentsTab from './PaymentsTab';
 import PaymentFlow from './PaymentFlow';
 
-export default function DashboardView() {
-  const { data: session } = useSession() as { data: Session | null };
+interface DashboardViewProps {
+  session: Session | null;
+}
 
+export default function DashboardView({ session }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState('payments');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);

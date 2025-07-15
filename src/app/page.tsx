@@ -1,49 +1,14 @@
 'use client';
 
-import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
 import LoginView from "@/components/LoginView";
 import DashboardView from "@/components/DashboardView";
+import { useValidatedSession } from "@/hooks/useValidatedSession";
 
 export default function Home() {
-  const { data: session, status } = useSession();
-  const [isValidUser, setIsValidUser] = useState<boolean | null>(null);
-  
-  useEffect(() => {
-    // Only run validation if we have a session
-    if (session?.supabaseUid) {
-      // Check if the user still exists in Supabase
-      const validateUser = async () => {
-        try {
-          const response = await fetch(`/api/auth/validate?userId=${session.userId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setIsValidUser(data.valid);
-            
-            // If user no longer exists, sign out
-            if (!data.valid) {
-              console.log("User no longer exists in Supabase, signing out...");
-              signOut();
-            }
-          } else {
-            console.error("Failed to validate user");
-            setIsValidUser(false);
-          }
-        } catch (error) {
-          console.error("Error validating user:", error);
-          setIsValidUser(false);
-        }
-      };
-      
-      validateUser();
-    } else if (status !== "loading") {
-      setIsValidUser(false);
-    }
-  }, [session, status]);
+  const { session, isValidUser, loading } = useValidatedSession();
   
   // Show loading state while checking authentication
-  if (status === "loading" || isValidUser === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
         <div className="text-center">
@@ -60,7 +25,7 @@ export default function Home() {
   
   // If authenticated and user is valid, show dashboard
   if (session && isValidUser) {
-    return <DashboardView />;
+    return <DashboardView session={session} />;
   }
   
   // If not authenticated or user is invalid, show login page

@@ -76,6 +76,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - **Vercel**: Request access to the `bedrock` Vercel project
 - **Supabase**: Request access to the `bedrock-prod` Supabase project
 - **Dynamic**: Request access to the `bedrock` Dynamic project
+- **Google Cloud**: Request access to the `Bedrock` Google Cloud Project
 
 ### Deployment Process
 

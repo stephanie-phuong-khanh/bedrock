@@ -81,55 +81,66 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 flex">
-      {/* Left side - Invoice Panel */}
-      {/* Show InvoicePanel in PaymentForm step, or in ConfirmPayment step only if invoice exists */}
-      {(!showConfirmation || invoice) && (
-        <InvoicePanel 
-          invoice={invoice}
-          onUploadInvoice={showConfirmation ? undefined : onUploadInvoice}
-          onDelete={showConfirmation ? undefined : onDelete}
-        />
-      )}
-
-      {/* Right side - Payment details */}
-      <div className={`${(!showConfirmation || invoice) ? 'w-1/2' : 'w-full'} p-8 overflow-auto relative`}>
-        {/* Close button positioned at the top right of the payment panel */}
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
-        
-        {showConfirmation && paymentData ? (
-          <ConfirmPayment
-            selectedVendor={paymentData.selectedVendor}
-            amount={paymentData.amount}
-            currency={paymentData.currency}
-            walletAddress={paymentData.walletAddress}
-            network={paymentData.network}
-            category={paymentData.category}
-            memo={paymentData.memo}
-            onBack={handleBack}
-            onConfirm={handleConfirmPayment}
-          />
-        ) : (
-          <PaymentForm
-            vendors={vendors}
-            isLoadingVendors={isLoadingVendors}
-            errorMessage={errorMessage}
-            onSubmit={handleFormSubmit}
-            selectedVendor={selectedVendor}
-            onVendorChange={handleVendorChange}
-            initialFormData={paymentData}
-          />
+    <>
+      {/* Overlay */}
+      <div 
+        className="fixed inset-0 bg-black/85 z-10"
+        onClick={onClose}
+      />
+      
+      {/* Modal Container */}
+      <div className={`fixed inset-y-0 right-0 ${(!showConfirmation || invoice) ? 'w-5/6' : 'w-full md:w-2/3 lg:w-1/2'} bg-white shadow-xl z-20 flex`}>
+        {/* Invoice Panel - positioned to the left within the modal */}
+        {(!showConfirmation || invoice) && (
+          <div className="w-1/2 border-r border-gray-200">
+            <InvoicePanel 
+              invoice={invoice}
+              onUploadInvoice={showConfirmation ? undefined : onUploadInvoice}
+              onDelete={showConfirmation ? undefined : onDelete}
+            />
+          </div>
         )}
+
+        {/* Payment Panel - positioned on the right within the modal */}
+        <div className={`${(!showConfirmation || invoice) ? 'w-1/2' : 'w-full'} relative`}>
+          <div className="h-full overflow-y-auto p-8">
+            {/* Close button positioned at the top right of the payment panel */}
+            <button 
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
+            
+            {showConfirmation && paymentData ? (
+              <ConfirmPayment
+                selectedVendor={paymentData.selectedVendor}
+                amount={paymentData.amount}
+                currency={paymentData.currency}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                memo={paymentData.memo}
+                onBack={handleBack}
+                onConfirm={handleConfirmPayment}
+              />
+            ) : (
+              <PaymentForm
+                vendors={vendors}
+                isLoadingVendors={isLoadingVendors}
+                errorMessage={errorMessage}
+                onSubmit={handleFormSubmit}
+                selectedVendor={selectedVendor}
+                onVendorChange={handleVendorChange}
+                initialFormData={paymentData}
+              />
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

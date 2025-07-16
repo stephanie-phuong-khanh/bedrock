@@ -8,7 +8,6 @@ interface ConfirmPaymentProps {
   currency: string;
   walletAddress: string;
   network: string;
-  category: string;
   memo: string;
   onBack: () => void;
   onConfirm: () => void;
@@ -20,7 +19,6 @@ export default function ConfirmPayment({
   currency,
   walletAddress,
   network,
-  category,
   memo,
   onBack,
   onConfirm
@@ -38,7 +36,6 @@ export default function ConfirmPayment({
           <div className="bg-gray-50 p-4 rounded flex justify-between items-center">
             <div>
               <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
-              <p className="text-gray-500 text-sm">{category || 'Professional services'}</p>
             </div>
             <div className="text-right">
               <p className="font-mono">{walletAddress}</p>

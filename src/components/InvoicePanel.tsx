@@ -102,7 +102,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
   };
 
   return (
-    <div className="w-1/2 border-r border-gray-200 p-8 overflow-auto">
+    <div className="w-full border-r border-gray-200 p-8 overflow-auto">
       {invoice ? (
         /* PDF Viewer when invoice exists */
         <div className="flex flex-col">

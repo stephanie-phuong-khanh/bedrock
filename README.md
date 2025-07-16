@@ -60,6 +60,11 @@ npm install
 
 # Run the development server
 npm run dev
+
+# Currently, `npm run dev` does not work after adding Dynamic libraries, so run `npm run build` and `npm run start` instead
+# TODO: fix this
+npm run build
+npm run start
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

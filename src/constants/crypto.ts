@@ -98,6 +98,13 @@ export const NETWORKS: Record<string, Network> = {
     blockExplorer: 'https://snowtrace.io',
     isEnabled: false, // Not yet enabled
   },
+  'base-sepolia': {
+    id: 'base-sepolia',
+    name: 'Base Sepolia Testnet',
+    chainId: 84532,
+    blockExplorer: 'https://basescan.org',
+    isEnabled: process.env.NEXT_PUBLIC_ENVIRONMENT === 'development',
+  }
 };
 
 // Token contract addresses by network
@@ -109,6 +116,7 @@ export const TOKEN_CONTRACTS: Record<string, TokenContracts> = {
     'optimism': '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as `0x${string}`,
     'polygon': '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as `0x${string}`,
     'avalanche': '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E' as `0x${string}`,
+    'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as `0x${string}`,
   },
   // Add other tokens as they are implemented
   'USDT': {

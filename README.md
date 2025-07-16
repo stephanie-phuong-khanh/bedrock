@@ -34,7 +34,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 # Ask for access to the `bedrock-dev` Dynamic project
 NEXT_PUBLIC_DYNAMIC_ENV_ID=your-dynamic-env-id
 
-# This is used
+# This is used to enable Base Sepolia Testnet
 NEXT_PUBLIC_ENVIRONMENT=development
 ```
 

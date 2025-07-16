@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { isAddress } from 'viem';
+import { useState, useEffect } from 'react';
 import { Invoice, Vendor } from '@/types/supabase';
-import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
-import WalletModal from './WalletModal';
+import InvoicePanel from './InvoicePanel';
+import PaymentForm, { PaymentFormData } from './PaymentForm';
+import ConfirmPayment from './ConfirmPayment';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -14,92 +14,22 @@ interface PaymentFlowProps {
 }
 
 export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete }: PaymentFlowProps) {
-  // Invoice viewer states
-  const [isPdf, setIsPdf] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  
-  // Payment form states
+  // Vendor management states
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Form fields
-  const [amount, setAmount] = useState<number>(0);
-  const [currency, setCurrency] = useState<string>('');
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [network, setNetwork] = useState<string>('');
-  const [category, setCategory] = useState<string>('');
-  const [memo, setMemo] = useState<string>('');
-  
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
-  // Wallet modal state
-  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
-  const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
-
-  // Validate wallet address
-  const validateWalletAddress = (address: string) => {
-    if (!address) {
-      setIsAddressValid(null);
-      return;
-    }
-    
-    const isValid = isAddress(address);
-    setIsAddressValid(isValid);
-    return isValid;
-  };
-
-  // Handle wallet address change
-  const handleWalletAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setWalletAddress(value);
-    validateWalletAddress(value);
-  };
-
-  // Check if all required fields are filled
-  const isFormComplete = selectedVendor && 
-    amount !== 0 && 
-    currency !== '' && 
-    walletAddress.trim() !== '' && 
-    network !== '' && 
-    isAddressValid === true;  // Ensure network is required
-    
-  // Debug validation state
-  useEffect(() => {
-    console.log('Validation state:', {
-      selectedVendor: !!selectedVendor,
-      amount: amount !== 0,
-      currency: currency !== '',
-      walletAddress: walletAddress.trim() !== '',
-      network: network !== '',
-      isAddressValid: isAddressValid,
-      isFormComplete
-    });
-  }, [selectedVendor, amount, currency, walletAddress, network, isAddressValid, isFormComplete]);
+  const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dropZoneRef = useRef<HTMLDivElement>(null);
-  
-  // Determine if the file is a PDF based on file name or content type
+  // Set selected vendor if invoice has a vendor_id
   useEffect(() => {
-    if (invoice) {
-      // Check if the file name ends with .pdf or if the URL contains PDF indicators
-      const isPdfFile = 
-        invoice.file_name.toLowerCase().endsWith('.pdf') || 
-        invoice.file_url.toLowerCase().includes('.pdf') ||
-        invoice.file_url.toLowerCase().includes('application/pdf');
-      
-      setIsPdf(isPdfFile);
-      
-      // If the invoice has a vendor_id, select that vendor
-      if (invoice.vendor_id) {
-        const vendor = vendors.find(v => v.id === invoice.vendor_id);
-        if (vendor) {
-          setSelectedVendor(vendor);
-        }
+    if (invoice && invoice.vendor_id && vendors.length > 0) {
+      const vendor = vendors.find(v => v.id === invoice.vendor_id);
+      if (vendor) {
+        setSelectedVendor(vendor);
       }
     }
   }, [invoice, vendors]);
@@ -110,7 +40,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       try {
         setIsLoadingVendors(true);
         
-        // Use the new API endpoint instead of direct Supabase access
+        // Use the API endpoint instead of direct Supabase access
         const response = await fetch('/api/vendors', {
           credentials: 'include', // Include cookies with the request
         });
@@ -133,127 +63,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     fetchVendors();
   }, []);
   
-  // Set up drag and drop event handlers
-  useEffect(() => {
-    if (!dropZoneRef.current) return;
-    
-    const dropZone = dropZoneRef.current;
-    
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(true);
-    };
-    
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-    };
-    
-    const handleDrop = async (e: DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(false);
-      
-      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        await handleFileUpload(e.dataTransfer.files[0]);
-      }
-    };
-    
-    dropZone.addEventListener('dragover', handleDragOver);
-    dropZone.addEventListener('dragleave', handleDragLeave);
-    dropZone.addEventListener('drop', handleDrop);
-    
-    return () => {
-      dropZone.removeEventListener('dragover', handleDragOver);
-      dropZone.removeEventListener('dragleave', handleDragLeave);
-      dropZone.removeEventListener('drop', handleDrop);
-    };
-  }, []);
-  
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFileUpload(e.target.files[0]);
-    }
-  };
-  
-  const handleFileUpload = async (file: File) => {
-    // Validate file type
-    if (!file.type.includes('pdf')) {
-      setUploadError('Only PDF files are allowed');
-      return;
-    }
-    
-    setIsUploading(true);
-    setUploadError(null);
-    
-    try {
-      if (onUploadInvoice) {
-        await onUploadInvoice(file);
-      }
-    } catch (error) {
-      console.error('Error uploading invoice:', error);
-      setUploadError('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-  
-  const handleBrowseFiles = () => {
-    fileInputRef.current?.click();
-  };
-  
-  const handleVendorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const vendorId = e.target.value;
-    if (!vendorId) {
-      setSelectedVendor(null);
-      return;
-    }
-    
-    const vendor = vendors.find(v => v.id === vendorId);
-    setSelectedVendor(vendor || null);
-    
-    // Clear wallet address and network when vendor changes
-    setWalletAddress('');
-    setNetwork('');
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Explicitly check each required field
-    if (!selectedVendor) {
-      alert('Please select a vendor');
-      return;
-    }
-    
-    if (!amount) {
-      alert('Please enter an amount');
-      return;
-    }
-    
-    if (!currency) {
-      alert('Please select a currency');
-      return;
-    }
-    
-    if (!walletAddress.trim()) {
-      alert('Please enter a wallet address');
-      return;
-    }
-    
-    if (!network) {
-      alert('Please select a payment network');
-      return;
-    }
-    
-    if (!isAddressValid) {
-      alert('Please enter a valid EVM wallet address');
-      return;
-    }
-    
-    // If all validations pass, show the confirmation screen
+  const handleFormSubmit = (formData: PaymentFormData) => {
+    setPaymentData(formData);
     setShowConfirmation(true);
   };
   
@@ -262,116 +73,27 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   };
   
   const handleConfirmPayment = () => {
-    // Show wallet modal when user clicks "Confirm & Send Payment"
-    setShowWalletModal(true);
+    alert('(dummy) Payment confirmed!');
   };
-  
-  const handleCloseWalletModal = () => {
-    setShowWalletModal(false);
+
+  const handleVendorChange = (vendor: Vendor | null) => {
+    setSelectedVendor(vendor);
   };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex">
-      {/* Left side - Invoice display or upload interface */}
-      <div className="w-1/2 border-r border-gray-200 p-8 overflow-auto">
-        {invoice ? (
-          /* PDF Viewer when invoice exists */
-          <div className="flex flex-col">
-            <div className="w-full h-[calc(100vh-180px)] bg-gray-100 rounded-md flex items-center justify-center">
-              {isPdf ? (
-                <object 
-                  data={invoice.file_url}
-                  type="application/pdf"
-                  className="w-full h-full"
-                >
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <p className="mb-4 text-gray-600">Unable to display PDF directly.</p>
-                    <a 
-                      href={invoice.file_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Open PDF in new tab
-                    </a>
-                  </div>
-                </object>
-              ) : (
-                <div className="text-center">
-                  <p className="text-gray-600 mb-4">This file type is not supported for preview.</p>
-                  <a 
-                    href={invoice.file_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Download File
-                  </a>
-                </div>
-              )}
-            </div>
-            
-            {/* Delete button */}
-            {onDelete && invoice && (
-              <div className="mt-4 flex justify-center">
-                <button
-                  onClick={() => onDelete(invoice.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete Invoice
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Invoice upload interface when no invoice exists */
-          <div className="flex flex-col items-center justify-center h-full">
-            <h2 className="text-2xl font-bold mb-8">Select an invoice to upload</h2>
-            
-            <div 
-              ref={dropZoneRef}
-              className={`border-2 border-dashed rounded-md p-12 flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-200 max-w-md mx-auto w-full ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
-              onClick={handleBrowseFiles}
-            >
-              {isUploading ? (
-                <div className="flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mb-2"></div>
-                  <p>Uploading...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="mb-4 text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                  </div>
-                  <p className="mb-2">Drag and drop your invoice here, or</p>
-                  <p className="mb-4 text-blue-600 font-medium">browse files</p>
-                  <p className="text-sm text-gray-500">PDF files only</p>
-                  
-                  {uploadError && (
-                    <p className="mt-4 text-red-500 text-sm">{uploadError}</p>
-                  )}
-                  
-                  <input 
-                    type="file" 
-                    ref={fileInputRef}
-                    className="hidden" 
-                    accept=".pdf"
-                    onChange={handleFileInputChange}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      
+      {/* Left side - Invoice Panel */}
+      {/* Show InvoicePanel in PaymentForm step, or in ConfirmPayment step only if invoice exists */}
+      {(!showConfirmation || invoice) && (
+        <InvoicePanel 
+          invoice={invoice}
+          onUploadInvoice={showConfirmation ? undefined : onUploadInvoice}
+          onDelete={showConfirmation ? undefined : onDelete}
+        />
+      )}
+
       {/* Right side - Payment details */}
-      <div className="w-1/2 p-8 overflow-auto relative">
+      <div className={`${(!showConfirmation || invoice) ? 'w-1/2' : 'w-full'} p-8 overflow-auto relative`}>
         {/* Close button positioned at the top right of the payment panel */}
         <button 
           onClick={onClose}
@@ -384,300 +106,30 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
 
         <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
         
-        {showConfirmation ? (
-          /* Confirmation Screen */
-          <div className="space-y-8">
-            <div>
-              <h3 className="text-xl font-semibold mb-4">Confirm Payment</h3>
-              <p className="text-gray-600">Review the details before sending your payment</p>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-lg font-medium mb-2">Paying to</h4>
-                <div className="bg-gray-50 p-4 rounded flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
-                    <p className="text-gray-500 text-sm">{category || 'Professional services'}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono">{walletAddress}</p>
-                    <p className="text-gray-500 text-sm">{network}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-lg font-medium mb-2">Payment details</h4>
-                <div className="bg-gray-50 p-4 rounded space-y-2">
-                  <div className="flex justify-between">
-                    <p>Amount:</p>
-                    <p className="font-medium">{amount} {currency}</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p>USD Equivalent:</p>
-                    <p>TODO</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p>Est. Gas Fee:</p>
-                    <p>TODO</p>
-                  </div>
-                </div>
-              </div>
-              
-              {memo && (
-                <div>
-                  <h4 className="text-lg font-medium mb-2">Memo</h4>
-                  <div className="bg-gray-50 p-4 rounded">
-                    <p>{memo}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-between pt-6">
-              <button
-                onClick={handleBack}
-                className="px-6 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back
-              </button>
-              <button
-                onClick={handleConfirmPayment}
-                className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800"
-              >
-                Confirm &amp; Send Payment
-              </button>
-            </div>
-          </div>
+        {showConfirmation && paymentData ? (
+          <ConfirmPayment
+            selectedVendor={paymentData.selectedVendor}
+            amount={paymentData.amount}
+            currency={paymentData.currency}
+            walletAddress={paymentData.walletAddress}
+            network={paymentData.network}
+            category={paymentData.category}
+            memo={paymentData.memo}
+            onBack={handleBack}
+            onConfirm={handleConfirmPayment}
+          />
         ) : (
-          /* Payment Form */
-          <form onSubmit={handleSubmit} className="space-y-8">
-          {errorMessage && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{errorMessage}</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Section 1: Select Vendor */}
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Select Vendor</h3>
-            <p className="text-gray-500 text-sm mb-4">Choose an existing vendor or create a new one</p>
-            
-            <select
-              id="vendor-select"
-              className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent mb-4"
-              value={selectedVendor?.id || ''}
-              onChange={handleVendorChange}
-              disabled={isLoadingVendors}
-              required
-            >
-              <option value="">Select a vendor</option>
-              {vendors.map((vendor) => (
-                <option key={vendor.id} value={vendor.id}>
-                  {vendor.name} {vendor.email ? `(${vendor.email})` : ''}
-                </option>
-              ))}
-            </select>
-            
-            <button
-              type="button"
-              className="w-full mt-2 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded flex items-center justify-center"
-            >
-              <span className="mr-2">+</span> Create new vendor
-            </button>
-          </div>
-          
-          {/* Section 2: Vendor Payment Method */}
-          <div className={`${!selectedVendor ? 'opacity-50 pointer-events-none' : ''}`}>
-            <h3 className="text-lg font-semibold mb-2">Vendor Payment Method</h3>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount *
-                  </label>
-                  <input
-                    type="number"
-                    id="amount"
-                    className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                    value={amount}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Handle empty input as 0, otherwise convert to number
-                      // If conversion results in NaN, keep the previous value
-                      const numValue = value === '' ? 0 : Number(value);
-                      setAmount(isNaN(numValue) ? amount : numValue);
-                    }}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
-                    Currency *
-                  </label>
-                  <select
-                    id="currency"
-                    className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                    value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
-                    required
-                  >
-                    <option value="">Select</option>
-                    {Object.values(getEnabledCryptocurrencies()).map((crypto) => (
-                      <option 
-                        key={crypto.symbol} 
-                        value={crypto.symbol}
-                        disabled={!crypto.isEnabled}
-                      >
-                        {crypto.symbol} - {crypto.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="wallet-address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Wallet address *
-                </label>
-                <span className="text-gray-500">Only EVM wallets are supported</span>
-                <div className="relative">
-                  <input
-                    type="text"
-                    id="wallet-address"
-                    className={`w-full py-2 px-3 border rounded focus:outline-none focus:border-black bg-transparent
-                      ${isAddressValid === false ? 'border-red-500' : ''}
-                      ${isAddressValid === true ? 'border-green-500' : 'border-gray-300'}`}
-                    value={walletAddress}
-                    onChange={handleWalletAddressChange}
-                    placeholder="0x..."
-                    required
-                  />
-                  <div className="text-xs mt-1">
-                    {isAddressValid === false && (
-                      <p className="text-red-500 mt-1">Please enter a valid EVM wallet address</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="network" className="block text-sm font-medium text-gray-700 mb-1">
-                  Payment network *
-                </label>
-                <select
-                  id="network"
-                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                  value={network}
-                  onChange={(e) => setNetwork(e.target.value)}
-                  required
-                >
-                  <option value="">Select</option>
-                  {getEnabledNetworks().map((network) => (
-                    <option key={network.id} value={network.id}>
-                      {network.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-          
-          {/* Section 3: Payment Details */}
-          <div className={`${!selectedVendor ? 'opacity-50 pointer-events-none' : ''}`}>
-            <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                >
-                  <option value="">Select</option>
-                  <option value="Professional Services">Professional Services</option>
-                  <option value="Software & SaaS">Software &amp; SaaS</option>
-                  <option value="Marketing & Advertising">Marketing &amp; Advertising</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Office Supplies">Office Supplies</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              
-              <div>
-                <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-1">
-                  Memo
-                </label>
-                <textarea
-                  id="memo"
-                  className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                  rows={3}
-                  placeholder="Additional notes about this payment"
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <div className="mt-8">
-              <button
-                type="submit"
-                className={`w-full bg-black text-white font-medium py-3 px-4 rounded ${!isFormComplete ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}`}
-                disabled={!isFormComplete}
-                aria-disabled={!isFormComplete}
-                onClick={(e) => {
-                  if (!isFormComplete) {
-                    e.preventDefault();
-                    // Identify which fields are missing
-                    if (!selectedVendor) alert('Please select a vendor');
-                    else if (!amount) alert('Please enter an amount');
-                    else if (!currency) alert('Please select a currency');
-                    else if (!walletAddress.trim()) alert('Please enter a wallet address');
-                    else if (!network) alert('Please select a payment network');
-                    else if (!isAddressValid) alert('Please enter a valid EVM wallet address');
-                  }
-                }}
-              >
-                Review Payment
-              </button>
-            </div>
-          </div>
-          </form>
+          <PaymentForm
+            vendors={vendors}
+            isLoadingVendors={isLoadingVendors}
+            errorMessage={errorMessage}
+            onSubmit={handleFormSubmit}
+            selectedVendor={selectedVendor}
+            onVendorChange={handleVendorChange}
+            initialFormData={paymentData}
+          />
         )}
       </div>
-      
-      {/* Wallet Modal */}
-      {(selectedVendor && amount && currency && walletAddress && network && isAddressValid) && (
-        <WalletModal 
-          isOpen={showWalletModal} 
-          onClose={handleCloseWalletModal} 
-          vendorId={selectedVendor.id}
-          invoiceId={invoice?.id}
-          vendorAddress={walletAddress}
-          vendorNetwork={network}
-          amount={amount}
-          tokenSymbol={currency}
-        />
-      )}
     </div>
   );
 }

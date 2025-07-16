@@ -9,6 +9,7 @@ import { Invoice } from '@/types/supabase';
 import VendorsTab from './VendorsTab';
 import PaymentsTab from './PaymentsTab';
 import PaymentFlow from './PaymentFlow';
+import ConnectWalletButton from './ConnectWalletButton';
 
 interface DashboardViewProps {
   session: Session | null;
@@ -209,7 +210,8 @@ export default function DashboardView({ session }: DashboardViewProps) {
           <div className="px-8 py-6">
             <div className="flex justify-between items-center relative">
               <h1 className="text-3xl font-bold">Bill Pay</h1>
-              <div>
+              <div className="flex items-center space-x-4">
+              <ConnectWalletButton />
                 <button 
                   ref={buttonRef}
                   className="bg-gray-200 hover:bg-gray-300 text-black font-medium py-2 px-16 rounded"

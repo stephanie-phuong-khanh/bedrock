@@ -11,6 +11,22 @@ export interface Vendor {
 
 export type NewVendor = Omit<Vendor, 'id' | 'created_at'>;
 
+export interface Payment {
+  id: string;
+  created_at: string;
+  user_id: string;
+  vendor_id: string;
+  invoice_id: string | null;
+  amount: number;
+  currency: string;
+  payment_network: string;
+  sender_wallet_address: string;
+  receiver_wallet_address: string;
+  tx_hash: string | null;
+  confirmed_at: string | null;
+  supabase_uid: string;
+}
+
 export interface Invoice {
   id: string;
   created_at: string;
@@ -23,4 +39,5 @@ export interface Invoice {
   status: 'pending' | 'paid' | 'cancelled';
 }
 
+export type NewPayment = Omit<Payment, 'id' | 'created_at'>;
 export type NewInvoice = Omit<Invoice, 'id' | 'created_at'>;

@@ -34,6 +34,24 @@ export default function ConfirmPayment({
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const formatFullAddress = (address: string) => {
+    if (!address || address.length < 10) return address;
+    
+    const prefix = address.slice(0, 2); // "0x"
+    const start = address.slice(2, 6); // First 4 after "0x"
+    const middle = address.slice(6, -4); // Middle portion
+    const end = address.slice(-4); // Last 4
+    
+    return (
+      <span className="font-mono">
+        <span className="text-gray-900">{prefix}</span>
+        <span className="text-gray-900">{start}</span>
+        <span className="text-gray-400">{middle}</span>
+        <span className="text-gray-900">{end}</span>
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -45,7 +63,7 @@ export default function ConfirmPayment({
               <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
             </div>
             <div className="text-right">
-              <p className="font-mono">{walletAddress}</p>
+              {formatFullAddress(walletAddress)}
               <p className="text-gray-500 text-sm">{network}</p>
             </div>
           </div>

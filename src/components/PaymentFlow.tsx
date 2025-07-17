@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
-import { Invoice, Vendor } from '@/types/supabase';
+import { InvoiceWithFileUrl, Vendor } from '@/types/supabase';
 import InvoicePanel from './InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
@@ -16,7 +16,7 @@ import {
 } from '../constants/crypto';
 
 interface PaymentFlowProps {
-  invoice?: Invoice | null;
+  invoice?: InvoiceWithFileUrl | null;
   onClose: () => void;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;

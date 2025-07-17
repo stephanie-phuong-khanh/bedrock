@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Invoice } from '@/types/supabase';
+import { InvoiceWithFileUrl } from '@/types/supabase';
 
 interface InvoicePanelProps {
-  invoice?: Invoice | null;
+  invoice?: InvoiceWithFileUrl | null;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
 }
@@ -18,13 +18,13 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   
-  // Determine if the file is a PDF based on file name or content type
+  // Determine if the file is a PDF based on file_path
   useEffect(() => {
-    if (invoice) {
+    if (invoice && invoice.file_path) {
       const isPdfFile = 
-        invoice.file_name.toLowerCase().endsWith('.pdf') || 
-        invoice.file_url.toLowerCase().includes('.pdf') ||
-        invoice.file_url.toLowerCase().includes('application/pdf');
+        invoice.file_path.toLowerCase().endsWith('.pdf') || 
+        invoice.file_path.toLowerCase().includes('.pdf') ||
+        invoice.file_path.toLowerCase().includes('application/pdf');
       
       setIsPdf(isPdfFile);
     }
@@ -109,14 +109,14 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
           <div className="w-full h-[calc(100vh-180px)] bg-gray-100 rounded-md flex items-center justify-center">
             {isPdf ? (
               <object 
-                data={invoice.file_url}
+                data={invoice.fileUrl}
                 type="application/pdf"
                 className="w-full h-full"
               >
                 <div className="flex flex-col items-center justify-center h-full">
                   <p className="mb-4 text-gray-600">Unable to display PDF directly.</p>
                   <a 
-                    href={invoice.file_url} 
+                    href={invoice.fileUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -129,7 +129,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
               <div className="text-center">
                 <p className="text-gray-600 mb-4">This file type is not supported for preview.</p>
                 <a 
-                  href={invoice.file_url} 
+                  href={invoice.fileUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { NETWORKS } from '@/constants/crypto';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
-import { Invoice } from '@/types/supabase';
+import { InvoiceWithFileUrl } from '@/types/supabase';
 import PaymentDetailsPanel from './PaymentDetailsPanel';
 import PaymentFlow from './PaymentFlow';
 import InvoiceUpload from './InvoiceUpload';
@@ -16,7 +16,7 @@ export default function PaymentsTab() {
   
   // Payment flow state
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
 
   // Function to load payments
   const loadPayments = useCallback(async () => {

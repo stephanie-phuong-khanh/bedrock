@@ -78,13 +78,13 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Return the file path, signed URL, and invoice ID
+		// Return the complete invoice record with signed URL merged in
 		return NextResponse.json({
 			success: true,
-			filePath: filePath,
-			fileUrl: signedUrlData.signedUrl,
-			invoiceId: data.id,
-			userId: userId,
+			invoice: {
+				...data,
+				fileUrl: signedUrlData.signedUrl
+			}
 		});
 	} catch (error: unknown) {
 		console.error('Error in invoice upload:', error);

@@ -5,7 +5,7 @@ import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { uploadInvoice } from '@/lib/invoice-utils';
-import { Invoice } from '@/types/supabase';
+import { InvoiceWithFileUrl } from '@/types/supabase';
 import VendorsTab from './VendorsTab';
 import PaymentsTab from './PaymentsTab';
 import PaymentFlow from './PaymentFlow';
@@ -20,7 +20,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const [activeTab, setActiveTab] = useState('payments');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
   const [paymentsKey, setPaymentsKey] = useState(0); // Used to force PaymentsTab refresh
   

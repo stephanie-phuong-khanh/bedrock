@@ -11,7 +11,6 @@ export interface Vendor {
 
 export type NewVendor = Omit<Vendor, 'id' | 'created_at'>;
 
-// Payment entity from database
 export interface Payment {
   id: string;
   created_at: string;
@@ -28,17 +27,16 @@ export interface Payment {
   supabase_uid: string;
 }
 
-// Invoice entity from database (actual schema)
 export interface Invoice {
   id: string;
   created_at: string;
   user_id: string;
+  file_url: string;
+  file_name: string;
   vendor_id: string | null;
-  file_path: string | null;
-  ocr_data: unknown; // JSONB - use unknown for type safety
-  status: string;
-  invoice_number: string | null;
-  supabase_uid: string;
+  amount: number | null;
+  due_date: string | null;
+  status: 'pending' | 'paid' | 'cancelled';
 }
 
 export type NewPayment = Omit<Payment, 'id' | 'created_at'>;

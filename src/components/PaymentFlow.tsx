@@ -8,6 +8,7 @@ import { Invoice, Vendor } from '@/types/supabase';
 import InvoicePanel from './InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
+import CompletedPayment from './CompletedPayment';
 import { 
   CRYPTOCURRENCIES, 
   getTokenContractAddress,
@@ -30,6 +31,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   
   // Payment flow state
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
+  const [showCompleted, setShowCompleted] = useState<boolean>(false);
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null);
   
   // Payment execution states
@@ -80,10 +82,6 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const handleFormSubmit = (formData: PaymentFormData) => {
     setPaymentData(formData);
     setShowConfirmation(true);
-  };
-  
-  const handleBack = () => {
-    setShowConfirmation(false);
   };
 
   const handleConfirmPayment = async () => {
@@ -213,9 +211,38 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       console.log('Payment record created:', data);
       
       setPaymentSuccess(true);
+      setShowCompleted(true);
     } catch (error: unknown) {
       console.error('Payment failed:', error);
-      setPaymentError(error instanceof Error ? error.message : 'Payment failed');
+      
+      // Parse error message for user-friendly display
+      let errorMessage = 'Payment failed';
+      
+      if (error instanceof Error) {
+        const errorText = error.message;
+        
+        // Handle specific contract errors
+        if (errorText.includes('transfer amount exceeds balance')) {
+          errorMessage = `Insufficient ${paymentData.currency} balance in your wallet. Please add more funds and try again.`;
+        } else if (errorText.includes('ERC20: transfer to the zero address')) {
+          errorMessage = 'Invalid recipient address. Please check the wallet address and try again.';
+        } else if (errorText.includes('ERC20: approve to the zero address')) {
+          errorMessage = 'Invalid token approval. Please try again.';
+        } else if (errorText.includes('User rejected the request') || errorText.includes('user rejected transaction')) {
+          errorMessage = 'Transaction was cancelled. Please try again when ready.';
+        } else if (errorText.includes('insufficient funds for gas')) {
+          errorMessage = 'Insufficient ETH for gas fees. Please add ETH to your wallet and try again.';
+        } else if (errorText.includes('nonce too low') || errorText.includes('replacement transaction underpriced')) {
+          errorMessage = 'Transaction conflict detected. Please wait a moment and try again.';
+        } else if (errorText.includes('network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          // For other errors, use the original message but clean it up
+          errorMessage = errorText;
+        }
+      }
+      
+      setPaymentError(errorMessage);
     } finally {
       setIsProcessingPayment(false);
     }
@@ -223,6 +250,15 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
 
   const handleVendorChange = (vendor: Vendor | null) => {
     setSelectedVendor(vendor);
+  };
+
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleBack = () => {
+    setShowConfirmation(false);
+    setPaymentError(null); // Clear any previous errors when going back
   };
 
   return (
@@ -234,21 +270,23 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       />
       
       {/* Modal Container */}
-      <div className={`fixed inset-y-0 right-0 ${(!showConfirmation || invoice) ? 'w-5/6' : 'w-full md:w-2/3 lg:w-1/2'} bg-white shadow-xl z-20 flex`}>
+      <div className={`fixed inset-y-0 right-0 ${invoice ? 'w-5/6' : 'w-full md:w-2/3 lg:w-1/2'} bg-white shadow-xl z-20 flex`}>
         {/* Invoice Panel - positioned to the left within the modal */}
-        {(!showConfirmation || invoice) && (
+        {invoice && (
           <div className="w-1/2 border-r border-gray-200">
             <InvoicePanel 
               invoice={invoice}
-              onUploadInvoice={showConfirmation ? undefined : onUploadInvoice}
-              onDelete={showConfirmation ? undefined : onDelete}
+              onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
+              onDelete={showConfirmation || showCompleted ? undefined : onDelete}
             />
           </div>
         )}
 
-        {/* Payment Panel - positioned on the right within the modal */}
-        <div className={`${(!showConfirmation || invoice) ? 'w-1/2' : 'w-full'} relative`}>
-          <div className="h-full overflow-y-auto p-8">
+        {/* Payment Panel */}
+        <div className={`bg-white h-full flex flex-col ${
+          invoice ? 'w-1/2' : 'w-full'
+        } relative z-20`}>
+          <div className="flex-1 overflow-y-auto p-8">
             {/* Close button positioned at the top right of the payment panel */}
             <button 
               onClick={onClose}
@@ -261,7 +299,19 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
 
             <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
             
-            {showConfirmation && paymentData ? (
+            {!showConfirmation && !showCompleted && (
+              <PaymentForm
+                vendors={vendors}
+                isLoadingVendors={isLoadingVendors}
+                errorMessage={errorMessage}
+                onSubmit={handleFormSubmit}
+                selectedVendor={selectedVendor}
+                onVendorChange={handleVendorChange}
+                initialFormData={paymentData}
+              />
+            )}
+            
+            {showConfirmation && !showCompleted && paymentData && (
               <ConfirmPayment
                 selectedVendor={paymentData.selectedVendor}
                 amount={paymentData.amount}
@@ -276,15 +326,17 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                 paymentSuccess={paymentSuccess}
                 txHash={txHash}
               />
-            ) : (
-              <PaymentForm
-                vendors={vendors}
-                isLoadingVendors={isLoadingVendors}
-                errorMessage={errorMessage}
-                onSubmit={handleFormSubmit}
-                selectedVendor={selectedVendor}
-                onVendorChange={handleVendorChange}
-                initialFormData={paymentData}
+            )}
+
+            {showCompleted && paymentData && txHash && (
+              <CompletedPayment
+                selectedVendor={paymentData.selectedVendor}
+                amount={paymentData.amount}
+                currency={paymentData.currency}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                txHash={txHash}
+                onClose={handleClose}
               />
             )}
           </div>

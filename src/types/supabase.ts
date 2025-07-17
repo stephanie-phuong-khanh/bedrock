@@ -35,7 +35,7 @@ export interface Invoice {
   user_id: string;
   vendor_id: string | null;
   file_path: string | null;
-  ocr_data: any; // JSONB
+  ocr_data: unknown; // JSONB - use unknown for type safety
   status: string;
   invoice_number: string | null;
   supabase_uid: string;

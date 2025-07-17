@@ -3,13 +3,20 @@
 import { useState, useCallback, useEffect } from 'react';
 import { NETWORKS } from '@/constants/crypto';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
+import { Invoice } from '@/types/supabase';
 import PaymentDetailsPanel from './PaymentDetailsPanel';
+import PaymentFlow from './PaymentFlow';
+import InvoiceUpload from './InvoiceUpload';
 
 export default function PaymentsTab() {
   const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithVendorName | null>(null);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
+  
+  // Payment flow state
+  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+  const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
 
   // Function to load payments
   const loadPayments = useCallback(async () => {
@@ -45,6 +52,52 @@ export default function PaymentsTab() {
   useEffect(() => {
     loadPayments();
   }, [loadPayments]);
+
+  // Handle file upload from CTA
+  const handleFileUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload invoice');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setCurrentInvoice(data.invoice);
+        setShowPaymentFlow(true);
+      }
+    } catch (error) {
+      console.error('Error uploading invoice:', error);
+      alert('Failed to upload invoice. Please try again.');
+    }
+  };
+
+  // Handle pay without invoice
+  const handlePayWithoutInvoice = () => {
+    setCurrentInvoice(null);
+    setShowPaymentFlow(true);
+  };
+
+  // Handle payment flow close
+  const handlePaymentFlowClose = () => {
+    setShowPaymentFlow(false);
+    setCurrentInvoice(null);
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = () => {
+    setShowPaymentFlow(false);
+    setCurrentInvoice(null);
+    loadPayments(); // Refresh payments list
+  };
   
   // Format the date in a readable format
   const formatDate = (dateString: string | null) => {
@@ -77,13 +130,19 @@ export default function PaymentsTab() {
     <div className="relative">
       {/* Main content */}
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Payments</h2>
-        </div>
+        {payments.length > 0 && (
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Payments</h2>
+          </div>
+        )}
         
         {payments.length === 0 ? (
-          <div className="text-center py-8 border border-gray-200 rounded-lg">
-            <p className="text-gray-500">No payments found. Complete a payment to see it here.</p>
+          <div className="py-16">
+            <InvoiceUpload
+              onFileSelect={handleFileUpload}
+              onPayWithoutInvoice={handlePayWithoutInvoice}
+              className="max-w-2xl mx-auto"
+            />
           </div>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -94,13 +153,13 @@ export default function PaymentsTab() {
                     Vendor
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Paid date
+                    Paid Date
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Method
+                    Network
                   </th>
                 </tr>
               </thead>
@@ -108,27 +167,22 @@ export default function PaymentsTab() {
                 {payments.map((payment) => (
                   <tr 
                     key={payment.id} 
+                    className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => handlePaymentClick(payment)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{payment.vendor_name}</div>
+                      <div className="text-sm text-gray-900">{payment.vendor_name}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(payment.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(payment.confirmed_at || payment.created_at)}
+                      <div className="text-sm font-medium text-gray-900">
+                        {payment.amount} {payment.currency}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        $ {payment.amount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-blue-600">
-                        {payment.currency}
-                      </div>
-                      <div className="text-sm text-gray-500">
                         {NETWORKS[payment.payment_network]?.name || payment.payment_network}
                       </div>
                     </td>
@@ -140,12 +194,21 @@ export default function PaymentsTab() {
         )}
       </div>
 
-      {/* Payment Details Side Panel */}
+      {/* Payment Details Panel */}
       <PaymentDetailsPanel
         payment={selectedPayment}
         isOpen={showDetailsPanel}
         onClose={handleCloseDetailsPanel}
       />
+
+      {/* Payment Flow Modal */}
+      {showPaymentFlow && (
+        <PaymentFlow
+          invoice={currentInvoice}
+          onClose={handlePaymentFlowClose}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
     </div>
   );
 }

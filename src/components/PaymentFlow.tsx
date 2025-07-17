@@ -1,10 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { isEthereumWallet } from '@dynamic-labs/ethereum';
+import { erc20Abi, parseUnits } from 'viem';
 import { Invoice, Vendor } from '@/types/supabase';
 import InvoicePanel from './InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
+import { 
+  CRYPTOCURRENCIES, 
+  getTokenContractAddress,
+  NETWORKS
+} from '../constants/crypto';
 
 interface PaymentFlowProps {
   invoice?: Invoice | null;
@@ -14,7 +22,7 @@ interface PaymentFlowProps {
 }
 
 export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete }: PaymentFlowProps) {
-  // Vendor management states
+  const { primaryWallet } = useDynamicContext();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
@@ -24,6 +32,12 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const [paymentData, setPaymentData] = useState<PaymentFormData | null>(null);
   
+  // Payment execution states
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [txHash, setTxHash] = useState<string | null>(null);
+
   // Set selected vendor if invoice has a vendor_id
   useEffect(() => {
     if (invoice && invoice.vendor_id && vendors.length > 0) {
@@ -71,9 +85,140 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
   const handleBack = () => {
     setShowConfirmation(false);
   };
-  
-  const handleConfirmPayment = () => {
-    alert('(dummy) Payment confirmed!');
+
+  const handleConfirmPayment = async () => {
+    // Reset states at the beginning of each attempt
+    setIsProcessingPayment(true);
+    setPaymentError(null);
+    setPaymentSuccess(false);
+
+    if (!paymentData || !selectedVendor || !primaryWallet) {
+      setPaymentError('Missing payment data or wallet connection');
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    if (!isEthereumWallet(primaryWallet)) {
+      setPaymentError('Wallet not connected or not compatible');
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    try {
+      const publicClient = await primaryWallet.getPublicClient();
+      const walletClient = await primaryWallet.getWalletClient();
+
+      // Validate token is enabled
+      if (!CRYPTOCURRENCIES[paymentData.currency]?.isEnabled) {
+        setPaymentError(`Token transfers for ${paymentData.currency} not implemented yet`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Get contract address for the network
+      const contractAddress = getTokenContractAddress(paymentData.currency, paymentData.network);
+      if (!contractAddress) {
+        setPaymentError(`${paymentData.currency} contract not configured for network: ${paymentData.network}`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Setup contract
+      const contract = {
+        address: contractAddress,
+        abi: erc20Abi,
+      };
+
+      // Convert amount to token units
+      const tokenDecimals = CRYPTOCURRENCIES[paymentData.currency].decimals;
+      const tokenAmount = parseUnits(paymentData.amount.toString(), tokenDecimals);
+
+      // Get the wallet's current chain ID
+      const walletChainId = walletClient.chain?.id;
+      
+      // Find the target network's chain ID
+      const targetNetwork = NETWORKS[paymentData.network];
+      if (!targetNetwork) {
+        setPaymentError(`Unsupported network: ${paymentData.network}`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Check if wallet is on the correct network
+      if (walletChainId !== targetNetwork.chainId) {
+        console.log('Network mismatch detected:', {
+          walletChainId,
+          targetChainId: targetNetwork.chainId,
+          targetNetwork: paymentData.network
+        });
+        setPaymentError(`Please switch your wallet to ${targetNetwork.name} (Chain ID: ${targetNetwork.chainId}) to proceed with the payment.`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      console.log('Network validation passed:', {
+        walletChainId,
+        targetNetwork: paymentData.network
+      });
+
+      // Simulate transaction
+      const { request } = await publicClient.simulateContract({
+        ...contract,
+        functionName: 'transfer',
+        args: [paymentData.walletAddress as `0x${string}`, tokenAmount],
+        account: primaryWallet.address as `0x${string}`,
+      });
+
+      // Send transaction
+      const hash = await walletClient.writeContract(request);
+      setTxHash(hash);
+      console.log('Transaction sent, hash:', hash);
+
+      // Wait for confirmation
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      console.log('Transaction confirmed:', receipt);
+
+      // Get block timestamp
+      const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
+      const confirmedAt = new Date(Number(block.timestamp) * 1000);
+
+      // Record payment in database
+      const paymentRecord = {
+        vendor_id: selectedVendor.id,
+        invoice_id: invoice?.id || null,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+        payment_network: paymentData.network,
+        sender_wallet_address: primaryWallet.address,
+        receiver_wallet_address: paymentData.walletAddress,
+        tx_hash: hash,
+        confirmed_at: confirmedAt,
+      };
+
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(paymentRecord),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to record payment');
+      }
+
+      const data = await response.json();
+      console.log('Payment record created:', data);
+      
+      setPaymentSuccess(true);
+    } catch (error: unknown) {
+      console.error('Payment failed:', error);
+      setPaymentError(error instanceof Error ? error.message : 'Payment failed');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleVendorChange = (vendor: Vendor | null) => {
@@ -126,6 +271,10 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
                 memo={paymentData.memo}
                 onBack={handleBack}
                 onConfirm={handleConfirmPayment}
+                isProcessingPayment={isProcessingPayment}
+                paymentError={paymentError}
+                paymentSuccess={paymentSuccess}
+                txHash={txHash}
               />
             ) : (
               <PaymentForm

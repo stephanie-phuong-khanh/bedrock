@@ -9,6 +9,7 @@ export async function GET() {
     const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
     
+    // Fetch payments with joined vendor and invoice data
     const { data, error } = await supabase
       .from('payments')
       .select(`

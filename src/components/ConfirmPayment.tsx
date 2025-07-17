@@ -106,14 +106,6 @@ export default function ConfirmPayment({
               <p>Amount:</p>
               <p className="font-medium">{amount} {currency}</p>
             </div>
-            <div className="flex justify-between">
-              <p>USD Equivalent:</p>
-              <p>TODO</p>
-            </div>
-            <div className="flex justify-between">
-              <p>Est. Gas Fee:</p>
-              <p>TODO</p>
-            </div>
           </div>
         </div>
         

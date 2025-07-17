@@ -74,8 +74,8 @@ export default function PaymentDetailsPanel({ payment, isOpen, onClose }: Paymen
         onClick={onClose}
       />
       
-      {/* Side Panel - Now wider to accommodate invoice */}
-      <div className="fixed right-0 top-0 h-full w-[80vw] bg-white shadow-xl z-50 flex">
+      {/* Side Panel - Width adjusts based on invoice presence */}
+      <div className={`fixed right-0 top-0 h-full ${payment.invoice_id ? 'w-[80vw]' : 'w-[40vw]'} bg-white shadow-xl z-50 flex`}>
         {/* Invoice Panel - Left Side */}
         {payment.invoice_id && (
           <div className="w-1/2 border-r border-gray-200 p-6 overflow-auto">

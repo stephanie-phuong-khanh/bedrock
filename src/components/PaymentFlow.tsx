@@ -20,9 +20,10 @@ interface PaymentFlowProps {
   onClose: () => void;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
+  onPaymentSuccess?: () => void;
 }
 
-export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete }: PaymentFlowProps) {
+export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete, onPaymentSuccess }: PaymentFlowProps) {
   const { primaryWallet } = useDynamicContext();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
@@ -212,6 +213,9 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       
       setPaymentSuccess(true);
       setShowCompleted(true);
+      
+      // Notify parent component of successful payment
+      onPaymentSuccess?.();
     } catch (error: unknown) {
       console.error('Payment failed:', error);
       

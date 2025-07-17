@@ -74,7 +74,12 @@ export default function PaymentsTab() {
         })
       );
       
-      setPayments(paymentsWithVendorNames);
+      // Sort payments by created_at in descending order (most recent first)
+      const sortedPayments = paymentsWithVendorNames.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setPayments(sortedPayments);
     } catch (error) {
       console.error('Error loading payments:', error);
     } finally {

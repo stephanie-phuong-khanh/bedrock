@@ -23,6 +23,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
   const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
+  const [paymentsKey, setPaymentsKey] = useState(0); // Used to force PaymentsTab refresh
   
   const modalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -129,6 +130,13 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const closePaymentFlow = () => {
     setCurrentInvoice(null);
     setShowInvoiceUpload(false);
+  };
+  
+  const handlePaymentSuccess = () => {
+    // Switch to payments tab to show the new payment
+    setActiveTab('payments');
+    // Force PaymentsTab to refresh by updating the key
+    setPaymentsKey(prev => prev + 1);
   };
   
   const handlePayWithoutInvoice = () => {
@@ -313,7 +321,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
           <div className="p-8">
             {activeTab === 'payments' && (
               <div className="min-h-[400px]">
-                <PaymentsTab />
+                <PaymentsTab key={paymentsKey} />
               </div>
             )}
             
@@ -332,6 +340,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
           invoice={currentInvoice} 
           onClose={closePaymentFlow}
           onDelete={handleInvoiceDelete}
+          onPaymentSuccess={handlePaymentSuccess}
           onUploadInvoice={async (file: File) => {
             const invoice = await uploadInvoice(file);
             if (invoice) {

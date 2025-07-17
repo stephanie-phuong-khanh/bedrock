@@ -3,6 +3,7 @@
 import { DynamicEmbeddedWidget, DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
+import { formatTruncatedAddress, formatStyledAddress } from '@/lib/wallet-utils';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
@@ -29,29 +30,6 @@ export default function ConfirmPayment({
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
-  const formatAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  const formatFullAddress = (address: string) => {
-    if (!address || address.length < 10) return address;
-    
-    const prefix = address.slice(0, 2); // "0x"
-    const start = address.slice(2, 6); // First 4 after "0x"
-    const middle = address.slice(6, -4); // Middle portion
-    const end = address.slice(-4); // Last 4
-    
-    return (
-      <span className="font-mono">
-        <span className="text-gray-900">{prefix}</span>
-        <span className="text-gray-900">{start}</span>
-        <span className="text-gray-400">{middle}</span>
-        <span className="text-gray-900">{end}</span>
-      </span>
-    );
-  };
-
   return (
     <div className="space-y-8">
       <div>
@@ -63,7 +41,7 @@ export default function ConfirmPayment({
               <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
             </div>
             <div className="text-right">
-              {formatFullAddress(walletAddress)}
+              {formatStyledAddress(walletAddress)}
               <p className="text-gray-500 text-sm">{network}</p>
             </div>
           </div>
@@ -111,7 +89,7 @@ export default function ConfirmPayment({
                 onClick={onConfirm}
                 className="px-6 py-2 bg-black text-white rounded-l hover:bg-gray-800 flex items-center"
               >
-                Pay from {formatAddress(primaryWallet.address)}
+                Pay from {formatTruncatedAddress(primaryWallet.address)}
               </button>
               <button
                 onClick={() => setShowWalletDropdown(!showWalletDropdown)}

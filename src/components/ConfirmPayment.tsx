@@ -3,6 +3,7 @@
 import { DynamicEmbeddedWidget, DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
+import { formatTruncatedAddress, formatStyledAddress } from '@/lib/wallet-utils';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
@@ -29,11 +30,6 @@ export default function ConfirmPayment({
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
-  const formatAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   return (
     <div className="space-y-8">
       <div>
@@ -45,7 +41,7 @@ export default function ConfirmPayment({
               <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
             </div>
             <div className="text-right">
-              <p className="font-mono">{walletAddress}</p>
+              {formatStyledAddress(walletAddress)}
               <p className="text-gray-500 text-sm">{network}</p>
             </div>
           </div>
@@ -93,7 +89,7 @@ export default function ConfirmPayment({
                 onClick={onConfirm}
                 className="px-6 py-2 bg-black text-white rounded-l hover:bg-gray-800 flex items-center"
               >
-                Pay from {formatAddress(primaryWallet.address)}
+                Pay from {formatTruncatedAddress(primaryWallet.address)}
               </button>
               <button
                 onClick={() => setShowWalletDropdown(!showWalletDropdown)}

@@ -17,7 +17,7 @@ interface PaymentFormProps {
 
 export interface PaymentFormData {
   selectedVendor: Vendor | null;
-  amount: number;
+  amount: string;
   currency: string;
   walletAddress: string;
   network: string;
@@ -35,7 +35,7 @@ export default function PaymentForm({
   initialFormData
 }: PaymentFormProps) {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
-  const [amount, setAmount] = useState<number>(initialFormData?.amount || 0);
+  const [amount, setAmount] = useState<string>(initialFormData?.amount || '0');
   const [currency, setCurrency] = useState<string>(initialFormData?.currency || '');
   const [walletAddress, setWalletAddress] = useState<string>(initialFormData?.walletAddress || '');
   const [network, setNetwork] = useState<string>(initialFormData?.network || '');
@@ -78,7 +78,7 @@ export default function PaymentForm({
 
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
-    amount !== 0 && 
+    parseFloat(amount) > 0 && 
     currency !== '' && 
     walletAddress.trim() !== '' && 
     network !== '' && 
@@ -95,10 +95,6 @@ export default function PaymentForm({
     const vendor = vendors.find(v => v.id === vendorId);
     setSelectedVendor(vendor || null);
     onVendorChange?.(vendor || null);
-    
-    // Clear wallet address and network when vendor changes
-    setWalletAddress('');
-    setNetwork('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -193,25 +189,38 @@ export default function PaymentForm({
         
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-                Amount *
-              </label>
+          <div>
+            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
+              Amount *
+            </label>
+            <div className="flex items-center border border-gray-300 rounded px-3 bg-white">
+              <span className="text-gray-500">$</span>
               <input
-                type="number"
+                type="text"
                 id="amount"
-                className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
+                className="w-full py-2 px-2 focus:outline-none bg-transparent"
                 value={amount}
                 onChange={(e) => {
-                  const value = e.target.value;
-                  // Handle empty input as 0, otherwise convert to number
-                  // If conversion results in NaN, keep the previous value
-                  const numValue = value === '' ? 0 : Number(value);
-                  setAmount(isNaN(numValue) ? amount : numValue);
+                  const rawValue = e.target.value;
+
+                  // Allow digits + optional dot + up to 2 decimal digits
+                  if (/^\d*\.?\d{0,2}$/.test(rawValue)) {
+                    setAmount(rawValue);
+                  }
                 }}
+                onBlur={() => {
+                  if (amount !== '') {
+                    const num = parseFloat(amount);
+                    if (!isNaN(num)) {
+                      setAmount(num.toFixed(2));  // Ensures 2 decimal places
+                    }
+                  }
+                }}
+                placeholder="0.00"
                 required
               />
             </div>
+          </div>
             
             <div>
               <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">

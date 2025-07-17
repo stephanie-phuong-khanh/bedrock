@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
-  amount: number;
+  amount: string;
   currency: string;
   walletAddress: string;
   network: string;

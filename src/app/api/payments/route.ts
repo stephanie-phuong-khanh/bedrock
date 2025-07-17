@@ -11,10 +11,23 @@ export async function GET() {
     
     const { data, error } = await supabase
       .from('payments')
-      .select('*')
+      .select(`
+        *,
+        vendors!payments_vendor_id_fkey(
+          name,
+          email
+        ),
+        invoices!payments_invoice_id_fkey(
+          id,
+          invoice_number,
+          status,
+          file_path,
+          created_at
+        )
+      `)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching payments:', error);

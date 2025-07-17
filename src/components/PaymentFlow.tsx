@@ -80,9 +80,17 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     fetchVendors();
   }, []);
   
-  const handleFormSubmit = (formData: PaymentFormData) => {
-    setPaymentData(formData);
-    setShowConfirmation(true);
+  const handlePaymentFormSubmit = (formData: PaymentFormData) => {
+    // Calculate crypto amount (for now, 1:1 with fiat for USDC)
+    const cryptoAmount = parseFloat(formData.fiatAmount);
+    const fxRate = 1.0; // USD:USDC parity
+    
+    setPaymentData({
+      ...formData,
+      cryptoAmount,
+      fxRate
+    });
+    setCurrentStep('confirm');
   };
 
   const handleConfirmPayment = async () => {
@@ -108,16 +116,16 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       const walletClient = await primaryWallet.getWalletClient();
 
       // Validate token is enabled
-      if (!CRYPTOCURRENCIES[paymentData.currency]?.isEnabled) {
-        setPaymentError(`Token transfers for ${paymentData.currency} not implemented yet`);
+      if (!CRYPTOCURRENCIES[paymentData.cryptoAsset]?.isEnabled) {
+        setPaymentError(`Token transfers for ${paymentData.cryptoAsset} not implemented yet`);
         setIsProcessingPayment(false);
         return;
       }
 
       // Get contract address for the network
-      const contractAddress = getTokenContractAddress(paymentData.currency, paymentData.network);
+      const contractAddress = getTokenContractAddress(paymentData.cryptoAsset, paymentData.network);
       if (!contractAddress) {
-        setPaymentError(`${paymentData.currency} contract not configured for network: ${paymentData.network}`);
+        setPaymentError(`${paymentData.cryptoAsset} contract not configured for network: ${paymentData.network}`);
         setIsProcessingPayment(false);
         return;
       }
@@ -129,8 +137,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       };
 
       // Convert amount to token units
-      const tokenDecimals = CRYPTOCURRENCIES[paymentData.currency].decimals;
-      const tokenAmount = parseUnits(paymentData.amount.toString(), tokenDecimals);
+      const tokenDecimals = CRYPTOCURRENCIES[paymentData.cryptoAsset].decimals;
+      const tokenAmount = parseUnits(paymentData.cryptoAmount.toString(), tokenDecimals);
 
       // Get the wallet's current chain ID
       const walletChainId = walletClient.chain?.id;
@@ -185,8 +193,11 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       const paymentRecord = {
         vendor_id: selectedVendor.id,
         invoice_id: invoice?.id || null,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
+        fiat_amount: parseFloat(paymentData.fiatAmount),
+        fiat_currency: paymentData.fiatCurrency,
+        crypto_asset: paymentData.cryptoAsset,
+        crypto_amount: paymentData.cryptoAmount,
+        fx_rate: paymentData.fxRate,
         payment_network: paymentData.network,
         sender_wallet_address: primaryWallet.address,
         receiver_wallet_address: paymentData.walletAddress,
@@ -227,7 +238,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
         
         // Handle specific contract errors
         if (errorText.includes('transfer amount exceeds balance')) {
-          errorMessage = `Insufficient ${paymentData.currency} balance in your wallet. Please add more funds and try again.`;
+          errorMessage = `Insufficient ${paymentData.cryptoAsset} balance in your wallet. Please add more funds and try again.`;
         } else if (errorText.includes('ERC20: transfer to the zero address')) {
           errorMessage = 'Invalid recipient address. Please check the wallet address and try again.';
         } else if (errorText.includes('ERC20: approve to the zero address')) {
@@ -318,8 +329,10 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
             {showConfirmation && !showCompleted && paymentData && (
               <ConfirmPayment
                 selectedVendor={paymentData.selectedVendor}
-                amount={paymentData.amount}
-                currency={paymentData.currency}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
                 walletAddress={paymentData.walletAddress}
                 network={paymentData.network}
                 memo={paymentData.memo}
@@ -335,8 +348,10 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
             {showCompleted && paymentData && txHash && (
               <CompletedPayment
                 selectedVendor={paymentData.selectedVendor}
-                amount={paymentData.amount}
-                currency={paymentData.currency}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
                 walletAddress={paymentData.walletAddress}
                 network={paymentData.network}
                 txHash={txHash}

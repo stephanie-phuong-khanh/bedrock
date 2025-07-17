@@ -5,8 +5,10 @@ import { getBlockExplorerUrl, NETWORKS } from '../constants/crypto';
 
 interface CompletedPaymentProps {
   selectedVendor: Vendor | null;
-  amount: string;
-  currency: string;
+  fiatAmount: string;
+  fiatCurrency: string;
+  cryptoAsset: string;
+  cryptoAmount: number;
   walletAddress: string;
   network: string;
   txHash: string;
@@ -15,8 +17,10 @@ interface CompletedPaymentProps {
 
 export default function CompletedPayment({
   selectedVendor,
-  amount,
-  currency,
+  fiatAmount,
+  fiatCurrency,
+  cryptoAsset,
+  cryptoAmount,
   walletAddress,
   network,
   txHash,
@@ -47,7 +51,10 @@ export default function CompletedPayment({
         <div className="grid grid-cols-1 gap-4">
           <div className="flex justify-between">
             <span className="text-gray-600">Amount:</span>
-            <span className="font-medium">{amount} {currency}</span>
+            <div className="text-right">
+              <div className="font-medium">{fiatAmount} {fiatCurrency}</div>
+              <div className="text-sm text-gray-600">{cryptoAmount} {cryptoAsset}</div>
+            </div>
           </div>
           
           <div className="flex justify-between">

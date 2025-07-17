@@ -130,14 +130,6 @@ export const TOKEN_CONTRACTS: Record<string, TokenContracts> = {
 };
 
 // Helper functions
-export function getEnabledCryptocurrencies(): CryptoCurrency[] {
-  return Object.values(CRYPTOCURRENCIES).filter(crypto => crypto.isEnabled);
-}
-
-export function getEnabledNetworks(): Network[] {
-  return Object.values(NETWORKS).filter(network => network.isEnabled);
-}
-
 export function getBlockExplorerUrl(network: string, txHash: string): string {
   const networkObj = NETWORKS[network.toLowerCase()];
   if (!networkObj || !networkObj.blockExplorer) {
@@ -148,4 +140,23 @@ export function getBlockExplorerUrl(network: string, txHash: string): string {
 
 export function getTokenContractAddress(token: string, network: string): `0x${string}` | undefined {
   return TOKEN_CONTRACTS[token]?.[network.toLowerCase()];
+}
+
+export function getEnabledCryptocurrencies(): Record<string, CryptoCurrency> {
+  return Object.fromEntries(
+    Object.entries(CRYPTOCURRENCIES).filter(([_, crypto]) => crypto.isEnabled)
+  );
+}
+
+export function getEnabledNetworks(): Array<{ id: string; name: string }> {
+  return Object.entries(NETWORKS)
+    .filter(([_, network]) => network.isEnabled)
+    .map(([id, network]) => ({ id, name: network.name }));
+}
+
+export function getSupportedFiatCurrencies(): Array<{ code: string; name: string; flag: string }> {
+  return [
+    { code: 'USD', name: 'US Dollar', flag: '🇺🇸' }
+    // Add more fiat currencies as needed
+  ];
 }

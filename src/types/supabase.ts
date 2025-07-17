@@ -17,8 +17,11 @@ export interface Payment {
   user_id: string;
   vendor_id: string;
   invoice_id: string | null;
-  amount: number;
-  currency: string;
+  fiat_amount: number;
+  fiat_currency: string;
+  crypto_asset: string;
+  crypto_amount: number;
+  fx_rate: number;
   payment_network: string;
   sender_wallet_address: string;
   receiver_wallet_address: string;

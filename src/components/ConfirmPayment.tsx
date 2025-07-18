@@ -7,8 +7,11 @@ import { formatTruncatedAddress, formatStyledAddress } from '@/lib/wallet-utils'
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
-  amount: string;
-  currency: string;
+  fiatAmount: string;
+  fiatCurrency: string;
+  cryptoAsset: string;
+  cryptoAmount: string;
+  fxRate: number;
   walletAddress: string;
   network: string;
   memo: string;
@@ -22,8 +25,11 @@ interface ConfirmPaymentProps {
 
 export default function ConfirmPayment({
   selectedVendor,
-  amount,
-  currency,
+  fiatAmount,
+  fiatCurrency,
+  cryptoAsset,
+  cryptoAmount,
+  fxRate,
   walletAddress,
   network,
   memo,
@@ -103,8 +109,15 @@ export default function ConfirmPayment({
           
           <div className="bg-gray-50 p-4 rounded space-y-2">
             <div className="flex justify-between">
-              <p>Amount:</p>
-              <p className="font-medium">{amount} {currency}</p>
+              <p>Fiat Amount:</p>
+              <p className="font-medium">{fiatAmount} {fiatCurrency}</p>
+            </div>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded space-y-2">
+            <div className="flex justify-between">
+              <p>Crypto Amount:</p>
+              <p className="font-medium">{cryptoAmount} {cryptoAsset} (exchange rate: {fxRate})</p>
             </div>
           </div>
         </div>

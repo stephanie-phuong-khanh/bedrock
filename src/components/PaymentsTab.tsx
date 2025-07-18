@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { NETWORKS } from '@/constants/crypto';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import PaymentDetailsPanel from './PaymentDetailsPanel';
 import PaymentFlow from './PaymentFlow';
 import InvoiceUpload from './InvoiceUpload';
+import { getPaymentNetworkNameFromId } from '../constants/crypto';
 
 export default function PaymentsTab() {
   const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
@@ -159,6 +159,9 @@ export default function PaymentsTab() {
                     Amount
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Asset
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Network
                   </th>
                 </tr>
@@ -178,12 +181,17 @@ export default function PaymentsTab() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {payment.amount} {payment.currency}
+                        {payment.fiat_amount} {payment.fiat_currency}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {NETWORKS[payment.payment_network]?.name || payment.payment_network}
+                        {payment.crypto_amount} {payment.crypto_asset}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {getPaymentNetworkNameFromId(payment.payment_network)}
                       </div>
                     </td>
                   </tr>

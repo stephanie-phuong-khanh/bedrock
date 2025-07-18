@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { NETWORKS, getBlockExplorerUrl } from '@/constants/crypto';
+import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/crypto';
 import { PaymentWithVendorName } from '@/types/payments';
 import { Invoice } from '@/types/supabase';
 
@@ -148,7 +148,7 @@ export default function PaymentDetailsPanel({ payment, isOpen, onClose }: Paymen
             {/* Amount */}
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Amount</h3>
-              <p className="text-2xl font-semibold text-gray-900">${payment.amount}</p>
+              <p className="text-2xl font-semibold text-gray-900">{payment.fiat_amount} {payment.fiat_currency}</p>
             </div>
 
             {/* Asset */}
@@ -159,7 +159,7 @@ export default function PaymentDetailsPanel({ payment, isOpen, onClose }: Paymen
                   <span className="text-xs font-medium text-blue-600">$</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{payment.currency}</p>
+                  <p className="text-sm font-medium text-gray-900">{payment.crypto_amount} {payment.crypto_asset}</p>
                   <p className="text-xs text-gray-500">USD Coin</p>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function PaymentDetailsPanel({ payment, isOpen, onClose }: Paymen
                   <span className="text-xs font-medium text-white">E</span>
                 </div>
                 <p className="text-sm font-medium text-gray-900">
-                  {NETWORKS[payment.payment_network]?.name || payment.payment_network}
+                  {getPaymentNetworkNameFromId(payment.payment_network)}
                 </p>
               </div>
             </div>

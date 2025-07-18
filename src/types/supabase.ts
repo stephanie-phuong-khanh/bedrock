@@ -17,14 +17,11 @@ export interface Payment {
   user_id: string;
   vendor_id: string;
   invoice_id: string | null;
-  // TODO: Make the following field changes in Supabase DB and here.
-  amount: number;
-  currency: string;
-  // fiat_amount: number;
-  // fiat_currency: string;
-  // crypto_amount: number;
-  // crypto_asset: string;
-  // fx_rate: number;
+  fiat_amount: number;
+  fiat_currency: string;
+  crypto_amount: number;
+  crypto_asset: string;
+  fx_rate: number;
   payment_network: string;
   sender_wallet_address: string;
   receiver_wallet_address: string;

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
-import { InvoiceWithFileUrl, Vendor } from '@/types/supabase';
+import { InvoiceWithFileUrl, PaymentCreationPayload, Vendor } from '@/types/supabase';
 import InvoicePanel from '../invoices/InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
@@ -131,7 +131,7 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
 
       // Convert amount to token units
       const tokenDecimals = getCryptocurrencyDecimals(paymentData.cryptoAsset);
-      const tokenAmount = parseUnits(paymentData.cryptoAmount.toString(), tokenDecimals);
+      const tokenAmount = parseUnits(paymentData.cryptoAmount, tokenDecimals);
 
       // Get the wallet's current chain ID
       const walletChainId = walletClient.chain?.id;
@@ -181,20 +181,32 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
       const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
       const confirmedAt = new Date(Number(block.timestamp) * 1000);
 
+      // Validate amount conversions
+      const fiatAmountNum = parseFloat(paymentData.fiatAmount);
+      const cryptoAmountNum = parseFloat(paymentData.cryptoAmount);
+      
+      if (isNaN(fiatAmountNum) || isNaN(cryptoAmountNum)) {
+        throw new Error('Invalid amount format - amounts must be valid numbers');
+      }
+      
+      if (fiatAmountNum <= 0 || cryptoAmountNum <= 0) {
+        throw new Error('Invalid amount - amounts must be greater than zero');
+      }
+
       // Record payment in database
-      const paymentRecord = {
+      const paymentRecord: PaymentCreationPayload = {
         vendor_id: selectedVendor.id,
         invoice_id: invoice?.id || null,
-        fiat_amount: paymentData.fiatAmount,
+        fiat_amount: fiatAmountNum,
         fiat_currency: paymentData.fiatCurrency,
         crypto_asset: paymentData.cryptoAsset,
-        crypto_amount: paymentData.cryptoAmount,
+        crypto_amount: cryptoAmountNum,
         fx_rate: paymentData.fxRate,
         payment_network: paymentData.network,
         sender_wallet_address: primaryWallet.address,
         receiver_wallet_address: paymentData.walletAddress,
         tx_hash: hash,
-        confirmed_at: confirmedAt,
+        confirmed_at: confirmedAt.toISOString(),
       };
 
       const response = await fetch('/api/payments', {

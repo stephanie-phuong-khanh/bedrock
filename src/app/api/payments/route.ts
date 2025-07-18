@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
+import { PaymentCreationPayload } from '@/types/supabase';
 
 // GET /api/payments - Get all payments for the current user
 export async function GET() {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
     const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
     
-    const paymentData = await request.json();
+    const paymentData: PaymentCreationPayload = await request.json();
     const paymentWithUserId = {
       ...paymentData,
       user_id: userId,

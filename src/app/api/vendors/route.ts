@@ -53,10 +53,7 @@ export async function POST(request: Request) {
     const vendorWithUserId = {
       ...vendorData,
       user_id: userId,
-      supabase_uid: supabaseUid,
-      // Set these to null to maintain compatibility with existing schema
-      wallet_address: null,
-      wallet_chain: null
+      supabase_uid: supabaseUid
     };
     
     // Insert the new vendor

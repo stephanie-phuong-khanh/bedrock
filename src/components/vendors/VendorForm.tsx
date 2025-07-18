@@ -17,12 +17,18 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
     email: '',
   });
   
-  // Initialize form with vendor data if editing
+  // Initialize form with vendor data if editing, or reset if adding new
   useEffect(() => {
     if (vendor && isEditing) {
       setFormData({
         name: vendor.name || '',
         email: vendor.email || '',
+      });
+    } else {
+      // Reset form for "Add New" mode
+      setFormData({
+        name: '',
+        email: '',
       });
     }
   }, [vendor, isEditing]);

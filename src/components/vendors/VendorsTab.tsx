@@ -103,7 +103,11 @@ export default function VendorsTab() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Vendors</h2>
           <button 
-            onClick={() => setIsSidePanelOpen(true)}
+            onClick={() => {
+              setCurrentVendor(undefined);
+              setIsEditing(false);
+              setIsSidePanelOpen(true);
+            }}
             className="bg-black hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-md flex items-center"
           >
             <span className="mr-1">+</span> Add New Vendor

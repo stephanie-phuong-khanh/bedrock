@@ -20,6 +20,32 @@ export interface TokenContracts {
   [network: string]: `0x${string}`;
 }
 
+// Supported fiat currencies
+export interface FiatCurrency {
+  symbol: string;
+  name: string;
+  isEnabled: boolean;
+}
+
+// Supported fiat currencies with their details
+export const FIAT_CURRENCIES: Record<string, FiatCurrency> = {
+  'USD': {
+    symbol: 'USD',
+    name: 'USD',
+    isEnabled: true,
+  },
+  'EUR': {
+    symbol: 'EUR',
+    name: 'EUR',
+    isEnabled: false,
+  },
+  'GBP': {
+    symbol: 'GBP',
+    name: 'GBP',
+    isEnabled: false,
+  },
+};
+
 // Supported cryptocurrencies with their details
 export const CRYPTOCURRENCIES: Record<string, CryptoCurrency> = {
   'ETH': {
@@ -130,6 +156,10 @@ export const TOKEN_CONTRACTS: Record<string, TokenContracts> = {
 };
 
 // Helper functions
+export function getEnabledFiatCurrencies(): FiatCurrency[] {
+  return Object.values(FIAT_CURRENCIES).filter(fiat => fiat.isEnabled);
+}
+
 export function getEnabledCryptocurrencies(): CryptoCurrency[] {
   return Object.values(CRYPTOCURRENCIES).filter(crypto => crypto.isEnabled);
 }
@@ -148,4 +178,31 @@ export function getBlockExplorerUrl(network: string, txHash: string): string {
 
 export function getTokenContractAddress(token: string, network: string): `0x${string}` | undefined {
   return TOKEN_CONTRACTS[token]?.[network.toLowerCase()];
+}
+
+export function getPaymentNetworkNameFromId(id: string): string {
+  const network = NETWORKS[id];
+  return network ? network.name : 'Unknown Network';
+}
+
+// Accessor functions for CRYPTOCURRENCIES
+export function getCryptocurrency(symbol: string): CryptoCurrency | undefined {
+  return CRYPTOCURRENCIES[symbol];
+}
+
+export function isCryptocurrencyEnabled(symbol: string): boolean {
+  return CRYPTOCURRENCIES[symbol]?.isEnabled || false;
+}
+
+export function getCryptocurrencyDecimals(symbol: string): number {
+  return CRYPTOCURRENCIES[symbol]?.decimals || 18;
+}
+
+// Accessor functions for NETWORKS
+export function getNetwork(id: string): Network | undefined {
+  return NETWORKS[id];
+}
+
+export function getNetworkChainId(id: string): number | undefined {
+  return NETWORKS[id]?.chainId;
 }

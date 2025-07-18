@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { Vendor } from '@/types/supabase';
-import { getEnabledCryptocurrencies, getEnabledNetworks } from '../constants/crypto';
+import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '../constants/crypto';
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -17,8 +17,11 @@ interface PaymentFormProps {
 
 export interface PaymentFormData {
   selectedVendor: Vendor | null;
-  amount: string;
-  currency: string;
+  fiatAmount: string;
+  fiatCurrency: string;
+  cryptoAsset: string;
+  cryptoAmount: string;
+  fxRate: number;
   walletAddress: string;
   network: string;
   category: string;
@@ -35,8 +38,9 @@ export default function PaymentForm({
   initialFormData
 }: PaymentFormProps) {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
-  const [amount, setAmount] = useState<string>(initialFormData?.amount || '0');
-  const [currency, setCurrency] = useState<string>(initialFormData?.currency || '');
+  const [fiatAmount, setFiatAmount] = useState<string>(initialFormData?.fiatAmount || '0');
+  const [fiatCurrency, setFiatCurrency] = useState<string>(initialFormData?.fiatCurrency || '');
+  const [cryptoAsset, setCryptoAsset] = useState<string>(initialFormData?.cryptoAsset || '');
   const [walletAddress, setWalletAddress] = useState<string>(initialFormData?.walletAddress || '');
   const [network, setNetwork] = useState<string>(initialFormData?.network || '');
   const [category, setCategory] = useState<string>(initialFormData?.category || '');
@@ -78,8 +82,8 @@ export default function PaymentForm({
 
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
-    parseFloat(amount) > 0 && 
-    currency !== '' && 
+    parseFloat(fiatAmount) > 0 && 
+    fiatCurrency !== '' && 
     walletAddress.trim() !== '' && 
     network !== '' && 
     isAddressValid === true;
@@ -106,12 +110,12 @@ export default function PaymentForm({
       return;
     }
     
-    if (!amount) {
+    if (!fiatAmount) {
       alert('Please enter an amount');
       return;
     }
     
-    if (!currency) {
+    if (!fiatCurrency) {
       alert('Please select a currency');
       return;
     }
@@ -132,10 +136,14 @@ export default function PaymentForm({
     }
     
     // If all validations pass, call onSubmit with form data
+    // TODO: Revisit `cryptoAsset` and `fxRate` once more fiat currencies and crypto assets are supported beyond USD and USDC respectively.
     onSubmit({
       selectedVendor,
-      amount,
-      currency,
+      fiatAmount,
+      fiatCurrency,
+      cryptoAsset,
+      cryptoAmount: fiatAmount, // Same as fiat_amount for USD:USDC parity
+      fxRate: 1.00, // Hardcoded USD:USDC parity
       walletAddress,
       network,
       category,
@@ -194,25 +202,23 @@ export default function PaymentForm({
               Amount *
             </label>
             <div className="flex items-center border border-gray-300 rounded px-3 bg-white">
-              <span className="text-gray-500">$</span>
               <input
                 type="text"
-                id="amount"
+                id="fiat_amount"
                 className="w-full py-2 px-2 focus:outline-none bg-transparent"
-                value={amount}
+                value={fiatAmount}
                 onChange={(e) => {
                   const rawValue = e.target.value;
-
                   // Allow digits + optional dot + up to 2 decimal digits
                   if (/^\d*\.?\d{0,2}$/.test(rawValue)) {
-                    setAmount(rawValue);
+                    setFiatAmount(rawValue);
                   }
                 }}
                 onBlur={() => {
-                  if (amount !== '') {
-                    const num = parseFloat(amount);
+                  if (fiatAmount !== '') {
+                    const num = parseFloat(fiatAmount);
                     if (!isNaN(num)) {
-                      setAmount(num.toFixed(2));  // Ensures 2 decimal places
+                      setFiatAmount(num.toFixed(2));  // Ensures 2 decimal places
                     }
                   }
                 }}
@@ -223,28 +229,52 @@ export default function PaymentForm({
           </div>
             
             <div>
-              <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="fiat_currency" className="block text-sm font-medium text-gray-700 mb-1">
                 Currency *
               </label>
               <select
-                id="currency"
+                id="fiat_currency"
                 className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
+                value={fiatCurrency}
+                onChange={(e) => setFiatCurrency(e.target.value)}
                 required
               >
                 <option value="">Select</option>
-                {Object.values(getEnabledCryptocurrencies()).map((crypto) => (
+                {Object.values(getEnabledFiatCurrencies()).map((fiat) => (
                   <option 
-                    key={crypto.symbol} 
-                    value={crypto.symbol}
-                    disabled={!crypto.isEnabled}
+                    key={fiat.symbol} 
+                    value={fiat.symbol}
+                    disabled={!fiat.isEnabled}
                   >
-                    {crypto.symbol}
+                    {fiat.symbol}
                   </option>
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="crypto_asset" className="block text-sm font-medium text-gray-700 mb-1">
+              Crypto asset *
+            </label>
+            <select
+              id="crypto_asset"
+              className="w-full py-2 px-3 border border-gray-300 rounded focus:outline-none focus:border-black bg-transparent"
+              value={cryptoAsset}
+              onChange={(e) => setCryptoAsset(e.target.value)}
+              required
+            >
+              <option value="">Select</option>
+              {Object.values(getEnabledCryptocurrencies()).map((crypto) => (
+                <option 
+                  key={crypto.symbol} 
+                  value={crypto.symbol}
+                  disabled={!crypto.isEnabled}
+                >
+                  {crypto.symbol}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -340,8 +370,9 @@ export default function PaymentForm({
                 e.preventDefault();
                 // Identify which fields are missing
                 if (!selectedVendor) alert('Please select a vendor');
-                else if (!amount) alert('Please enter an amount');
-                else if (!currency) alert('Please select a currency');
+                else if (!fiatAmount) alert('Please enter an amount');
+                else if (!fiatCurrency) alert('Please select a currency');
+                else if (!cryptoAsset) alert('Please select a crypto asset');
                 else if (!walletAddress.trim()) alert('Please enter a wallet address');
                 else if (!network) alert('Please select a payment network');
                 else if (!isAddressValid) alert('Please enter a valid EVM wallet address');

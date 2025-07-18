@@ -1,12 +1,15 @@
 'use client';
 
 import { Vendor } from '@/types/supabase';
-import { getBlockExplorerUrl, NETWORKS } from '../constants/crypto';
+import { getBlockExplorerUrl, getNetwork } from '../constants/crypto';
 
 interface CompletedPaymentProps {
   selectedVendor: Vendor | null;
-  amount: string;
-  currency: string;
+  fiatAmount: string;
+  fiatCurrency: string;
+  cryptoAsset: string;
+  cryptoAmount: string;
+  fxRate: number;
   walletAddress: string;
   network: string;
   txHash: string;
@@ -15,15 +18,18 @@ interface CompletedPaymentProps {
 
 export default function CompletedPayment({
   selectedVendor,
-  amount,
-  currency,
+  fiatAmount,
+  fiatCurrency,
+  cryptoAsset,
+  cryptoAmount,
+  fxRate,
   walletAddress,
   network,
   txHash,
   onClose,
 }: CompletedPaymentProps) {
   const blockExplorerUrl = getBlockExplorerUrl(network, txHash);
-  const networkInfo = NETWORKS[network];
+  const networkInfo = getNetwork(network);
 
   return (
     <div className="space-y-8">
@@ -46,12 +52,17 @@ export default function CompletedPayment({
         
         <div className="grid grid-cols-1 gap-4">
           <div className="flex justify-between">
-            <span className="text-gray-600">Amount:</span>
-            <span className="font-medium">{amount} {currency}</span>
+            <span className="text-gray-600">Fiat Amount:</span>
+            <span className="font-medium">{fiatAmount} {fiatCurrency}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span className="text-gray-600">Crypto Amount:</span>
+            <span className="font-medium">{cryptoAmount} {cryptoAsset} (exchange rate: {fxRate})</span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-gray-600">Recipient:</span>
+            <span className="text-gray-600">Vendor:</span>
             <span className="font-medium">{selectedVendor?.name || 'Unknown'}</span>
           </div>
           

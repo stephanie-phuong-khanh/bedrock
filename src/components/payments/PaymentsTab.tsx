@@ -3,10 +3,10 @@
 import { useState, useCallback, useEffect } from 'react';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-import PaymentDetailsPanel from './PaymentDetailsPanel';
+import PaymentDetails from './PaymentDetails';
 import PaymentFlow from './PaymentFlow';
-import InvoiceUpload from './InvoiceUpload';
-import { getPaymentNetworkNameFromId } from '../constants/crypto';
+import InvoiceUpload from '../invoices/InvoiceUpload';
+import { getPaymentNetworkNameFromId } from '../../constants/crypto';
 
 export default function PaymentsTab() {
   const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
@@ -186,7 +186,7 @@ export default function PaymentsTab() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {payment.crypto_amount} {payment.crypto_asset}
+                        {payment.crypto_asset}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -203,7 +203,7 @@ export default function PaymentsTab() {
       </div>
 
       {/* Payment Details Panel */}
-      <PaymentDetailsPanel
+      <PaymentDetails
         payment={selectedPayment}
         isOpen={showDetailsPanel}
         onClose={handleCloseDetailsPanel}

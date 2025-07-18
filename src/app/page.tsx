@@ -1,7 +1,7 @@
 'use client';
 
-import LoginView from "@/components/LoginView";
-import DashboardView from "@/components/DashboardView";
+import LoginView from "@/components/dashboard/LoginView";
+import DashboardView from "@/components/dashboard/DashboardView";
 import { useValidatedSession } from "@/hooks/useValidatedSession";
 
 export default function Home() {

@@ -6,7 +6,7 @@ import {
   DynamicContextProvider
 } from "@dynamic-labs/sdk-react-core";
 import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
-import { cssOverrides } from "@/lib/dynamicStyles";
+import { cssOverrides } from "@/lib/dynamic-styles";
 
 export function Providers({ children }: { children: ReactNode }) {
   return (

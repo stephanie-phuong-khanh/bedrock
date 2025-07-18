@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { Vendor } from '@/types/supabase';
-import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '../constants/crypto';
+import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '../../constants/crypto';
 
 interface PaymentFormProps {
   vendors: Vendor[];

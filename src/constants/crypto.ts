@@ -128,7 +128,7 @@ export const NETWORKS: Record<string, Network> = {
     id: 'base-sepolia',
     name: 'Base Sepolia Testnet',
     chainId: 84532,
-    blockExplorer: 'https://basescan.org',
+    blockExplorer: 'https://sepolia.basescan.org',
     isEnabled: process.env.NEXT_PUBLIC_ENVIRONMENT === 'development',
   }
 };

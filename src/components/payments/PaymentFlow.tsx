@@ -5,7 +5,7 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
 import { InvoiceWithFileUrl, Vendor } from '@/types/supabase';
-import InvoicePanel from './InvoicePanel';
+import InvoicePanel from '../invoices/InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
 import CompletedPayment from './CompletedPayment';
@@ -14,7 +14,7 @@ import {
   isCryptocurrencyEnabled,
   getCryptocurrencyDecimals,
   getNetwork,
-} from '../constants/crypto';
+} from '../../constants/crypto';
 
 interface PaymentFlowProps {
   invoice?: InvoiceWithFileUrl | null;

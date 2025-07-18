@@ -5,13 +5,13 @@ import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/cr
 import { PaymentWithVendorName } from '@/types/payments';
 import { Invoice } from '@/types/supabase';
 
-interface PaymentDetailsPanelProps {
+interface PaymentDetailsProps {
   payment: PaymentWithVendorName | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PaymentDetailsPanel({ payment, isOpen, onClose }: PaymentDetailsPanelProps) {
+export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDetailsProps) {
   const [invoice, setInvoice] = useState<Invoice & { fileUrl?: string } | null>(null);
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
   const [isPdf, setIsPdf] = useState(true);
@@ -85,7 +85,6 @@ export default function PaymentDetailsPanel({ payment, isOpen, onClose }: Paymen
               </div>
             ) : invoice && invoice.fileUrl ? (
               <div className="flex flex-col h-full">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Invoice</h3>
                 <div className="flex-1 bg-gray-100 rounded-md flex items-center justify-center">
                   {isPdf ? (
                     <object 

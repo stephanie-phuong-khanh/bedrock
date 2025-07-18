@@ -6,11 +6,11 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-import VendorsTab from './VendorsTab';
-import PaymentsTab from './PaymentsTab';
-import PaymentFlow from './PaymentFlow';
+import VendorsTab from '../vendors/VendorsTab';
+import PaymentsTab from '../payments/PaymentsTab';
+import PaymentFlow from '../payments/PaymentFlow';
 import ConnectWalletButton from './ConnectWalletButton';
-import InvoiceUpload from './InvoiceUpload';
+import InvoiceUpload from '../invoices/InvoiceUpload';
 
 interface DashboardViewProps {
   session: Session | null;

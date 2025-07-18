@@ -15,10 +15,9 @@ A simple web app for users to pay their bills in stablecoins and track their pay
 Create a `.env.local` file in the root directory with the following variables:
 
 ```bash
-# NextAuth
-NEXTAUTH_URL=http://localhost:3000
 # Generate your own random secret using `openssl rand -base64 32`
 NEXTAUTH_SECRET=your-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
 
 # Google OAuth
 # Ask someone with access to the `Bedrock` Google Cloud Project for these credentials under the `bedrock-dev` OAuth 2.0 Client
@@ -28,7 +27,10 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 # Supabase
 # Ask for access to the `bedrock-dev` Supabase project
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_DB_PASSWORD=your-supabase-db-password
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret
 
 # Dynamic (https://app.dynamic.xyz/)
 # Ask for access to the `bedrock-dev` Dynamic project

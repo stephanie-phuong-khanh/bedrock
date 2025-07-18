@@ -28,7 +28,8 @@ export interface Payment {
   supabase_uid: string;
 }
 
-export type NewPayment = Omit<Payment, 'id' | 'created_at'>;
+// Type for payment creation payload (excludes fields set by API)
+export type PaymentCreationPayload = Omit<Payment, 'id' | 'created_at' | 'user_id' | 'supabase_uid'>;
 
 export interface Invoice {
   id: string;

@@ -43,8 +43,14 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 min-h-screen flex flex-col">
       {/* Logo/Brand area */}
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900">Bedrock</h2>
+      <div className="p-6 border-b border-gray-200 flex items-center">
+        <Image 
+          src="/geode.svg" 
+          alt="Geode Logo" 
+          width={33} 
+          height={33} 
+          className="w-8 h-8"
+        />
       </div>
 
       {/* Navigation Items */}

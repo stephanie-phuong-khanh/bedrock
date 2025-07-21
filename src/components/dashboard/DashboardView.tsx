@@ -3,12 +3,13 @@
 import { signOut } from "next-auth/react";
 import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import VendorsTab from '../vendors/VendorsTab';
-import PaymentsTab from '../payments/PaymentsTab';
 import PaymentFlow from '../payments/PaymentFlow';
+import BillsView from '../bills/BillsView';
 import ConnectWalletButton from './ConnectWalletButton';
 import InvoiceUpload from '../invoices/InvoiceUpload';
 import Sidebar from './Sidebar';
@@ -18,7 +19,13 @@ interface DashboardViewProps {
 }
 
 export default function DashboardView({ session }: DashboardViewProps) {
-  const [activeSidebarItem, setActiveSidebarItem] = useState('bills');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Get initial state from URL parameters
+  const [activeSidebarItem, setActiveSidebarItem] = useState(() => {
+    return searchParams.get('section') || 'bills';
+  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
@@ -72,11 +79,44 @@ export default function DashboardView({ session }: DashboardViewProps) {
     setShowInvoiceUpload(false);
     setCurrentInvoice(null);
     setPaymentsKey(prev => prev + 1); // Force PaymentsTab refresh
+    
+    // Navigate to Bills section and Paid tab to show the new payment
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', 'bills');
+    params.set('tab', 'paid');
+    router.push(`?${params.toString()}`, { scroll: false });
+    
+    // Update local state to match URL
+    setActiveSidebarItem('bills');
   };
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
   };
+
+  // Handle sidebar navigation with URL updates
+  const handleSidebarNavigation = (section: string) => {
+    setActiveSidebarItem(section);
+    
+    // Update URL parameters
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('section', section);
+    
+    // Clear bills-specific parameters when switching to vendors
+    if (section === 'vendors') {
+      params.delete('tab');
+    }
+    
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  // Sync state with URL changes
+  useEffect(() => {
+    const section = searchParams.get('section');
+    if (section && section !== activeSidebarItem) {
+      setActiveSidebarItem(section);
+    }
+  }, [searchParams, activeSidebarItem]);
 
   // Get page title based on active sidebar item
   const getPageTitle = () => {
@@ -96,8 +136,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
       case 'bills':
         return (
           <div className="min-h-[400px]">
-            {/* Temporary: Still showing PaymentsTab until we create BillsView */}
-            <PaymentsTab key={paymentsKey} />
+            <BillsView paymentsKey={paymentsKey} />
           </div>
         );
       case 'vendors':
@@ -109,7 +148,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
       default:
         return (
           <div className="min-h-[400px]">
-            <PaymentsTab key={paymentsKey} />
+            <BillsView paymentsKey={paymentsKey} />
           </div>
         );
     }
@@ -122,7 +161,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
         <Sidebar 
           session={session}
           activeItem={activeSidebarItem}
-          onItemChange={setActiveSidebarItem}
+          onItemChange={handleSidebarNavigation}
         />
         
         {/* Main Content */}

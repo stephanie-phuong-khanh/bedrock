@@ -59,7 +59,7 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
           <button
             key={item.id}
             onClick={() => onItemChange(item.id)}
-            className={`w-full flex items-center px-6 py-2 text-base font-medium transition-colors ${
+            className={`w-full flex items-center pl-6 pr-0 py-2 text-base font-medium transition-colors ${
               activeItem === item.id
                 ? 'bg-white text-primary-700 rounded-l-full'
                 : 'text-gray-400 hover:text-gray-600'

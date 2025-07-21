@@ -1,10 +1,8 @@
 'use client';
 
-import { signOut } from "next-auth/react";
 import { Session } from 'next-auth';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import VendorsTab from '../vendors/VendorsTab';
@@ -26,11 +24,10 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const [activeSidebarItem, setActiveSidebarItem] = useState(() => {
     return searchParams.get('section') || 'bills';
   });
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
-  const [paymentsKey, setPaymentsKey] = useState(0); // Used to force PaymentsTab refresh
+
   
   const modalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -78,7 +75,6 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const handlePaymentSuccess = () => {
     setShowInvoiceUpload(false);
     setCurrentInvoice(null);
-    setPaymentsKey(prev => prev + 1); // Force PaymentsTab refresh
     
     // Navigate to Bills section and Paid tab to show the new payment
     const params = new URLSearchParams(searchParams.toString());
@@ -88,10 +84,6 @@ export default function DashboardView({ session }: DashboardViewProps) {
     
     // Update local state to match URL
     setActiveSidebarItem('bills');
-  };
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
   };
 
   // Handle sidebar navigation with URL updates
@@ -136,7 +128,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
       case 'bills':
         return (
           <div className="min-h-[400px]">
-            <BillsView paymentsKey={paymentsKey} />
+            <BillsView />
           </div>
         );
       case 'vendors':
@@ -148,7 +140,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
       default:
         return (
           <div className="min-h-[400px]">
-            <BillsView paymentsKey={paymentsKey} />
+            <BillsView />
           </div>
         );
     }

@@ -5,11 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
 
-interface BillsViewProps {
-  paymentsKey?: number;
-}
-
-export default function BillsView({ paymentsKey }: BillsViewProps) {
+export default function BillsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -47,7 +43,7 @@ export default function BillsView({ paymentsKey }: BillsViewProps) {
       case 'drafts':
         return <DraftsTab />;
       case 'paid':
-        return <PaidTab key={paymentsKey} />;
+        return <PaidTab />;
       default:
         return <DraftsTab />;
     }

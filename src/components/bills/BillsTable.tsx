@@ -2,23 +2,28 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
-import { InvoiceWithFileUrl } from '@/types/supabase';
-import PaymentDetails from './PaymentDetails';
-import PaymentFlow from './PaymentFlow';
-import InvoiceUpload from '../invoices/InvoiceUpload';
+import PaymentDetails from '../payments/PaymentDetails';
 import { getPaymentNetworkNameFromId } from '../../constants/crypto';
 
-export default function PaymentsTab() {
+interface BillsTableProps {
+  title?: string;
+  emptyStateMessage?: string;
+  emptyStateComponent?: React.ReactNode;
+  filterPredicate?: (payment: PaymentWithVendorName) => boolean;
+}
+
+export default function BillsTable({ 
+  title = "Bills", 
+  emptyStateMessage = "No bills found",
+  emptyStateComponent,
+  filterPredicate 
+}: BillsTableProps) {
   const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithVendorName | null>(null);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
-  
-  // Payment flow state
-  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
 
-  // Function to load payments
+  // Function to load bills (payment records)
   const loadPayments = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -28,76 +33,35 @@ export default function PaymentsTab() {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load payments');
+        throw new Error(errorData.error || 'Failed to load bills');
       }
       
       const data: PaymentWithVendor[] = await response.json();
       
       // Transform the data to include vendor_name and additional details from joined tables
-      const paymentsWithVendorNames: PaymentWithVendorName[] = data.map((payment) => ({
+      let paymentsWithVendorNames: PaymentWithVendorName[] = data.map((payment) => ({
         ...payment,
         vendor_name: payment.vendors?.name || 'Unknown Vendor',
         vendor_email: payment.vendors?.email,
         invoice_data: payment.invoices,
       }));
+
+      // Apply filter if provided
+      if (filterPredicate) {
+        paymentsWithVendorNames = paymentsWithVendorNames.filter(filterPredicate);
+      }
       
       setPayments(paymentsWithVendorNames);
     } catch (error) {
-      console.error('Error loading payments:', error);
+      console.error('Error loading bills:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filterPredicate]);
   
   useEffect(() => {
     loadPayments();
   }, [loadPayments]);
-
-  // Handle file upload from CTA
-  const handleFileUpload = async (file: File) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload invoice');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setCurrentInvoice(data.invoice);
-        setShowPaymentFlow(true);
-      }
-    } catch (error) {
-      console.error('Error uploading invoice:', error);
-      alert('Failed to upload invoice. Please try again.');
-    }
-  };
-
-  // Handle pay without invoice
-  const handlePayWithoutInvoice = () => {
-    setCurrentInvoice(null);
-    setShowPaymentFlow(true);
-  };
-
-  // Handle payment flow close
-  const handlePaymentFlowClose = () => {
-    setShowPaymentFlow(false);
-    setCurrentInvoice(null);
-  };
-
-  // Handle payment success
-  const handlePaymentSuccess = () => {
-    setShowPaymentFlow(false);
-    setCurrentInvoice(null);
-    loadPayments(); // Refresh payments list
-  };
   
   // Format the date in a readable format
   const formatDate = (dateString: string | null) => {
@@ -123,7 +87,7 @@ export default function PaymentsTab() {
   };
   
   if (isLoading) {
-    return <div className="text-center py-4">Loading payments...</div>;
+    return <div className="text-center py-4">Loading bills...</div>;
   }
   
   return (
@@ -132,17 +96,17 @@ export default function PaymentsTab() {
       <div>
         {payments.length > 0 && (
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Payments</h2>
+            <h2 className="text-xl font-bold">{title}</h2>
           </div>
         )}
         
         {payments.length === 0 ? (
           <div className="py-16">
-            <InvoiceUpload
-              onFileSelect={handleFileUpload}
-              onPayWithoutInvoice={handlePayWithoutInvoice}
-              className="max-w-2xl mx-auto"
-            />
+            {emptyStateComponent || (
+              <div className="text-center">
+                <p className="text-gray-500">{emptyStateMessage}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -208,15 +172,6 @@ export default function PaymentsTab() {
         isOpen={showDetailsPanel}
         onClose={handleCloseDetailsPanel}
       />
-
-      {/* Payment Flow Modal */}
-      {showPaymentFlow && (
-        <PaymentFlow
-          invoice={currentInvoice}
-          onClose={handlePaymentFlowClose}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
     </div>
   );
 }

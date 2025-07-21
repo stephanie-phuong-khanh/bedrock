@@ -55,11 +55,11 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
             onClick={() => onItemChange(item.id)}
             className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
               activeItem === item.id
-                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                ? 'bg-primary-50 text-primary-700 border border-primary-200'
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
           >
-            <span className={`mr-3 ${activeItem === item.id ? 'text-blue-700' : 'text-gray-400'}`}>
+            <span className={`mr-3 ${activeItem === item.id ? 'text-primary-700' : 'text-gray-400'}`}>
               {item.icon}
             </span>
             {item.label}
@@ -77,7 +77,7 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
         <div className="relative">
           <button 
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-full flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-3">
               {session?.user?.image ? (

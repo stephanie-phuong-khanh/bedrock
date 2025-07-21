@@ -138,11 +138,11 @@ export default function BillsView() {
     <div className="space-y-6">
       {/* Header with Pay bill button */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Bills</h1>
+        <h1 className="text-page-title">Bills</h1>
         <div className="relative">
           <button 
             ref={buttonRef}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+            className="btn-base btn-primary py-2 px-6"
             onClick={() => setShowPayBillModal(!showPayBillModal)}
           >
             Pay bill
@@ -176,7 +176,7 @@ export default function BillsView() {
               onClick={() => handleTabNavigation(tab.id)}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeBillsTab === tab.id
-                  ? 'border-blue-600 text-blue-600'
+                  ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >

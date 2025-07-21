@@ -4,6 +4,7 @@ import { Session } from 'next-auth';
 import { signOut } from "next-auth/react";
 import Image from 'next/image';
 import { useState } from 'react';
+import ConnectWalletButton from './ConnectWalletButton';
 
 interface SidebarProps {
   session: Session | null;
@@ -65,6 +66,11 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
           </button>
         ))}
       </nav>
+
+      {/* Connect Wallet Section */}
+      <div className="px-4 py-4">
+        <ConnectWalletButton />
+      </div>
 
       {/* User Profile Section */}
       <div className="border-t border-gray-200 p-4">

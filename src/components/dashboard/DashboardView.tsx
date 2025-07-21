@@ -8,7 +8,7 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 import VendorsTab from '../vendors/VendorsTab';
 import PaymentFlow from '../payments/PaymentFlow';
 import BillsView from '../bills/BillsView';
-import ConnectWalletButton from './ConnectWalletButton';
+
 import InvoiceUpload from '../invoices/InvoiceUpload';
 import Sidebar from './Sidebar';
 
@@ -163,8 +163,6 @@ export default function DashboardView({ session }: DashboardViewProps) {
             <div className="flex justify-between items-center relative">
               <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
               <div className="flex items-center space-x-4">
-                <ConnectWalletButton />
-                
                 {/* Pay Bill Button - only show when in Bills section */}
                 {activeSidebarItem === 'bills' && (
                   <div className="relative">

@@ -73,7 +73,7 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
       </div>
 
       {/* User Profile Section */}
-      <div className="pl-6 pr-4 pt-2 pb-4">
+      <div className="p-4">
         <AccountButton session={session} />
       </div>
     </div>

@@ -4,7 +4,11 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
 import VendorForm from './VendorForm';
 
-export default function VendorsTab() {
+interface VendorsTabProps {
+  showAddVendor?: boolean;
+}
+
+export default function VendorsTab({ showAddVendor }: VendorsTabProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
@@ -38,6 +42,20 @@ export default function VendorsTab() {
   useEffect(() => {
     loadVendors();
   }, [loadVendors]);
+
+  // Handle external add vendor trigger
+  const handleAddVendorClick = () => {
+    setCurrentVendor(undefined);
+    setIsEditing(false);
+    setIsSidePanelOpen(true);
+  };
+
+  // Handle external add vendor trigger
+  useEffect(() => {
+    if (showAddVendor) {
+      handleAddVendorClick();
+    }
+  }, [showAddVendor]);
   
   const handleVendorAdded = () => {
     loadVendors();
@@ -100,19 +118,7 @@ export default function VendorsTab() {
     <div className="relative">
       {/* Main content */}
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Vendors</h2>
-          <button 
-            onClick={() => {
-              setCurrentVendor(undefined);
-              setIsEditing(false);
-              setIsSidePanelOpen(true);
-            }}
-            className="bg-black hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-md flex items-center"
-          >
-            <span className="mr-1">+</span> Add New Vendor
-          </button>
-        </div>
+
         
         {vendors.length === 0 ? (
           <div className="text-center py-8 border border-gray-200 rounded-lg">

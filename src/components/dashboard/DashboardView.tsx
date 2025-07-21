@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-import VendorsTab from '../vendors/VendorsTab';
+import VendorsView from '../vendors/VendorsView';
 import PaymentFlow from '../payments/PaymentFlow';
 import BillsView from '../bills/BillsView';
 
@@ -27,6 +27,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
 
   
   const modalRef = useRef<HTMLDivElement>(null);
@@ -72,6 +73,11 @@ export default function DashboardView({ session }: DashboardViewProps) {
     setCurrentInvoice(null);
   };
 
+  // Handle add vendor modal reset
+  const handleAddVendorComplete = () => {
+    setShowAddVendorModal(false);
+  };
+
   const handlePaymentSuccess = () => {
     setShowInvoiceUpload(false);
     setCurrentInvoice(null);
@@ -101,6 +107,17 @@ export default function DashboardView({ session }: DashboardViewProps) {
     
     router.push(`?${params.toString()}`, { scroll: false });
   };
+
+  // Auto-reset add vendor modal after trigger
+  useEffect(() => {
+    if (showAddVendorModal) {
+      // Reset the modal state after a short delay to allow the trigger to be processed
+      const timer = setTimeout(() => {
+        setShowAddVendorModal(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [showAddVendorModal]);
 
   // Sync state with URL changes
   useEffect(() => {
@@ -134,7 +151,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
       case 'vendors':
         return (
           <div className="min-h-[400px]">
-            <VendorsTab />
+            <VendorsView showAddVendor={showAddVendorModal} />
           </div>
         );
       default:
@@ -171,7 +188,7 @@ export default function DashboardView({ session }: DashboardViewProps) {
                       className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
                       onClick={() => setShowPayBillModal(!showPayBillModal)}
                     >
-                      Pay Bill
+                      Pay bill
                     </button>
                     
                     {/* Pay Bill Modal */}
@@ -191,6 +208,16 @@ export default function DashboardView({ session }: DashboardViewProps) {
                       </div>
                     )}
                   </div>
+                )}
+                
+                {/* Add Vendor Button - only show when in Vendors section */}
+                {activeSidebarItem === 'vendors' && (
+                  <button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                    onClick={() => setShowAddVendorModal(true)}
+                  >
+                    Add vendor
+                  </button>
                 )}
               </div>
             </div>

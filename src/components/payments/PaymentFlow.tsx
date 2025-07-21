@@ -24,7 +24,13 @@ interface PaymentFlowProps {
   onPaymentSuccess?: () => void;
 }
 
-export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelete, onPaymentSuccess }: PaymentFlowProps) {
+export default function PaymentFlow({
+  invoice,
+  onClose,
+  onUploadInvoice,
+  onDelete,
+  onPaymentSuccess
+}: PaymentFlowProps) {
   const { primaryWallet } = useDynamicContext();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
@@ -284,7 +290,8 @@ export default function PaymentFlow({ invoice, onClose, onUploadInvoice, onDelet
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/85 z-10"
+        className="fixed inset-0 bg-black bg-opacity-85 z-10"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)' }}
         onClick={onClose}
       />
       

@@ -1,7 +1,7 @@
 'use client';
 
 import { Session } from 'next-auth';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from './Sidebar';
 import BillsView from '../bills/BillsView';

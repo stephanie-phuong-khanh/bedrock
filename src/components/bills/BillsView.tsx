@@ -7,6 +7,7 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
 import InvoiceUpload from '../invoices/InvoiceUpload';
+import PaymentFlow from '../payments/PaymentFlow';
 
 export default function BillsView() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function BillsView() {
   // Pay bill modal state
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
-  const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
+  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   
   const modalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -61,7 +62,7 @@ export default function BillsView() {
     try {
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
-      setShowInvoiceUpload(true);
+      setShowPaymentFlow(true);
       setShowPayBillModal(false);
     } catch (error) {
       console.error('Error uploading invoice:', error);
@@ -72,17 +73,17 @@ export default function BillsView() {
   // Handle pay without invoice
   const handlePayWithoutInvoice = () => {
     setCurrentInvoice(null);
-    setShowInvoiceUpload(true);
+    setShowPaymentFlow(true);
     setShowPayBillModal(false);
   };
 
-  const handleCloseInvoiceUpload = () => {
-    setShowInvoiceUpload(false);
+  const handleClosePaymentFlow = () => {
+    setShowPaymentFlow(false);
     setCurrentInvoice(null);
   };
 
   const handlePaymentSuccess = () => {
-    setShowInvoiceUpload(false);
+    setShowPaymentFlow(false);
     setCurrentInvoice(null);
     
     // Navigate to Paid tab to show the new payment
@@ -171,22 +172,12 @@ export default function BillsView() {
       </div>
 
       {/* Payment Flow Modal */}
-      {showInvoiceUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Payment Flow</h2>
-              <button 
-                onClick={handleCloseInvoiceUpload}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-            {/* Payment flow content would go here */}
-            <p>Payment flow modal content</p>
-          </div>
-        </div>
+      {showPaymentFlow && (
+        <PaymentFlow
+          invoice={currentInvoice}
+          onClose={handleClosePaymentFlow}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
       )}
     </div>
   );

@@ -128,7 +128,7 @@ export default function SidePanel({
         {layout === 'dual' ? (
           // Dual Panel Layout: Left content + Right content
           <div className="flex h-full">
-            {/* Left Panel (Invoice/Preview) */}
+            {/* Left Panel, used currently for invoice preview but can be used for other content */}
             <div className="w-1/2 bg-gray-50 border-r border-gray-200">
               {leftContent}
             </div>

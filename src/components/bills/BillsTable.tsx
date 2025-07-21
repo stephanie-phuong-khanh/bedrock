@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
-import PaymentDetails from '../payments/PaymentDetails';
+import PaymentDetails from './PaymentDetails';
 import { getPaymentNetworkNameFromId } from '../../constants/crypto';
 
 interface BillsTableProps {

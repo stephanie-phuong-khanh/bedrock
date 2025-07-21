@@ -7,7 +7,7 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
 import BillPaymentInitiator from './BillPaymentInitiator';
-import PaymentFlow from '../payments/PaymentFlow';
+import PaymentFlow from './PaymentFlow';
 
 export default function BillsView() {
   const router = useRouter();

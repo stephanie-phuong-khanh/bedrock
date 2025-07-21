@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import BillsTable from './BillsTable';
-import PaymentFlow from '../payments/PaymentFlow';
+import PaymentFlow from './PaymentFlow';
 import BillPaymentInitiator from './BillPaymentInitiator';
 
 export default function PaidTab() {

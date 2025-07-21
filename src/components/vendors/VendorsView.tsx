@@ -216,7 +216,19 @@ export default function VendorsView() {
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-30" onClick={handleDeleteCancel} />
+          <div 
+            className="fixed inset-0 bg-black/85 z-30" 
+            style={{ 
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh'
+            }}
+            onClick={handleDeleteCancel} 
+          />
           <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-xl z-40 w-full max-w-md">
             <h3 className="text-xl font-medium mb-4">Confirm Deletion</h3>
             <p className="mb-6">

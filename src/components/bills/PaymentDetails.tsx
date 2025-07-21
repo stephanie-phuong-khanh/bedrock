@@ -5,7 +5,7 @@ import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/cr
 import { PaymentWithVendorName } from '@/types/payments';
 import { Invoice } from '@/types/supabase';
 import SidePanel from '../dashboard/SidePanel';
-import InvoicePanel from '../invoices/InvoicePanel';
+import InvoicePanel from './InvoicePanel';
 
 interface PaymentDetailsProps {
   payment: PaymentWithVendorName | null;

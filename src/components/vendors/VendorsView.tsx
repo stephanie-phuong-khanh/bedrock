@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
 import VendorForm from './VendorForm';
 
-export default function VendorsTab() {
+export default function VendorsView() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
@@ -38,7 +38,14 @@ export default function VendorsTab() {
   useEffect(() => {
     loadVendors();
   }, [loadVendors]);
-  
+
+  // Handle external add vendor trigger
+  const handleAddVendorClick = () => {
+    setCurrentVendor(undefined);
+    setIsEditing(false);
+    setIsSidePanelOpen(true);
+  };
+
   const handleVendorAdded = () => {
     loadVendors();
     setIsSidePanelOpen(false);
@@ -97,23 +104,20 @@ export default function VendorsTab() {
   }
   
   return (
-    <div className="relative">
+    <div className="space-y-6">
+      {/* Header with Add vendor button */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Vendors</h1>
+        <button 
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          onClick={handleAddVendorClick}
+        >
+          Add vendor
+        </button>
+      </div>
+
       {/* Main content */}
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Vendors</h2>
-          <button 
-            onClick={() => {
-              setCurrentVendor(undefined);
-              setIsEditing(false);
-              setIsSidePanelOpen(true);
-            }}
-            className="bg-black hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-md flex items-center"
-          >
-            <span className="mr-1">+</span> Add New Vendor
-          </button>
-        </div>
-        
+      <div className="relative">
         {vendors.length === 0 ? (
           <div className="text-center py-8 border border-gray-200 rounded-lg">
             <p className="text-gray-500">No vendors found. Add your first vendor to get started.</p>

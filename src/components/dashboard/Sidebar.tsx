@@ -43,7 +43,7 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 min-h-screen flex flex-col">
       {/* Logo/Brand area */}
-      <div className="p-6 border-b border-gray-200 flex items-center">
+      <div className="p-6 flex items-center">
         <Image 
           src="/geode.svg" 
           alt="Geode Logo" 
@@ -54,18 +54,18 @@ export default function Sidebar({ session, activeItem, onItemChange }: SidebarPr
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-4 py-6 space-y-2">
+      <nav className="flex-1 px-4 py-8 space-y-3">
         {sidebarItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onItemChange(item.id)}
-            className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+            className={`w-full flex items-center px-6 py-2 text-base font-medium transition-colors ${
               activeItem === item.id
-                ? 'bg-primary-50 text-primary-700 border border-primary-200'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                ? 'bg-white text-primary-700 rounded-l-full'
+                : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            <span className={`mr-3 ${activeItem === item.id ? 'text-primary-700' : 'text-gray-400'}`}>
+            <span className={`mr-4 ${activeItem === item.id ? 'text-primary-700' : 'text-gray-400'}`}>
               {item.icon}
             </span>
             {item.label}

@@ -108,9 +108,9 @@ export default function VendorsView() {
     <div className="space-y-6">
       {/* Header with Add vendor button */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Vendors</h1>
+        <h1 className="text-page-title">Vendors</h1>
         <button 
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+          className="btn-base btn-primary py-2 px-6"
           onClick={handleAddVendorClick}
         >
           Add vendor

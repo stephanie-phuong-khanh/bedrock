@@ -3,7 +3,7 @@
 import { Session } from 'next-auth';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Sidebar from './Sidebar';
+import SideBar from './SideBar';
 import BillsView from '../bills/BillsView';
 import VendorsView from '../vendors/VendorsView';
 
@@ -75,18 +75,18 @@ export default function DashboardView({ session }: DashboardViewProps) {
 
   return (
     <div className="relative">
-      <div className="min-h-screen bg-white flex">
+      <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
-        <Sidebar 
+        <SideBar 
           session={session}
           activeItem={activeSidebarItem}
           onItemChange={handleSidebarNavigation}
         />
         
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 pt-3">
           {/* Main Content Area */}
-          <div className="p-8">
+          <div className="bg-white rounded-tl-2xl py-6 px-10 min-h-[calc(100vh-0.75rem)]">
             {renderMainContent()}
           </div>
         </div>

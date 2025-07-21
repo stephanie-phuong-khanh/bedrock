@@ -6,14 +6,12 @@ import PaymentDetails from './PaymentDetails';
 import { getPaymentNetworkNameFromId } from '../../constants/crypto';
 
 interface BillsTableProps {
-  title?: string;
   emptyStateMessage?: string;
   emptyStateComponent?: React.ReactNode;
   filterPredicate?: (payment: PaymentWithVendorName) => boolean;
 }
 
 export default function BillsTable({ 
-  title = "Bills", 
   emptyStateMessage = "No bills found",
   emptyStateComponent,
   filterPredicate 
@@ -94,12 +92,6 @@ export default function BillsTable({
     <div className="relative">
       {/* Main content */}
       <div>
-        {payments.length > 0 && (
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">{title}</h2>
-          </div>
-        )}
-        
         {payments.length === 0 ? (
           <div className="py-16">
             {emptyStateComponent || (

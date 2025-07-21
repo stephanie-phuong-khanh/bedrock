@@ -54,7 +54,7 @@ export default function PaidTab() {
   const handlePaymentSuccess = () => {
     setShowPaymentFlow(false);
     setCurrentInvoice(null);
-    // PaymentsTable will automatically refresh via its own useEffect
+    // BillsTable will automatically refresh via its own useEffect
   };
 
   // Empty state component for when no payments exist

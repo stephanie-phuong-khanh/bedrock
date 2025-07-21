@@ -11,13 +11,14 @@ import PaymentsTab from '../payments/PaymentsTab';
 import PaymentFlow from '../payments/PaymentFlow';
 import ConnectWalletButton from './ConnectWalletButton';
 import InvoiceUpload from '../invoices/InvoiceUpload';
+import Sidebar from './Sidebar';
 
 interface DashboardViewProps {
   session: Session | null;
 }
 
 export default function DashboardView({ session }: DashboardViewProps) {
-  const [activeTab, setActiveTab] = useState('payments');
+  const [activeSidebarItem, setActiveSidebarItem] = useState('bills');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
@@ -77,131 +78,98 @@ export default function DashboardView({ session }: DashboardViewProps) {
     await signOut({ callbackUrl: '/' });
   };
 
+  // Get page title based on active sidebar item
+  const getPageTitle = () => {
+    switch (activeSidebarItem) {
+      case 'bills':
+        return 'Bills';
+      case 'vendors':
+        return 'Vendors';
+      default:
+        return 'Bills';
+    }
+  };
+
+  // Render main content based on active sidebar item
+  const renderMainContent = () => {
+    switch (activeSidebarItem) {
+      case 'bills':
+        return (
+          <div className="min-h-[400px]">
+            {/* Temporary: Still showing PaymentsTab until we create BillsView */}
+            <PaymentsTab key={paymentsKey} />
+          </div>
+        );
+      case 'vendors':
+        return (
+          <div className="min-h-[400px]">
+            <VendorsTab />
+          </div>
+        );
+      default:
+        return (
+          <div className="min-h-[400px]">
+            <PaymentsTab key={paymentsKey} />
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="relative">
       <div className="min-h-screen bg-white flex">
-        {/* Left Panel */}
-        <div className="w-20 border-r border-gray-200 min-h-screen flex flex-col items-center">
-          {/* Left panel content will go here */}
-          
-          {/* User Avatar - moved to bottom of left panel */}
-          <div className="mt-auto mb-6 relative">
-            <button 
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {session?.user?.image ? (
-                <Image 
-                  src={session.user.image} 
-                  alt="User avatar" 
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-gray-600 text-sm font-medium">
-                  {session?.user?.name?.charAt(0) || 'U'}
-                </span>
-              )}
-            </button>
-            
-            {/* User menu popup */}
-            {showUserMenu && (
-              <div className="absolute bottom-12 left-0 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium">{session?.user?.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
-                </div>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Sidebar */}
+        <Sidebar 
+          session={session}
+          activeItem={activeSidebarItem}
+          onItemChange={setActiveSidebarItem}
+        />
         
         {/* Main Content */}
         <div className="flex-1">
           {/* Header */}
-          <div className="px-8 py-6">
+          <div className="px-8 py-6 border-b border-gray-200">
             <div className="flex justify-between items-center relative">
-              <h1 className="text-3xl font-bold">Bill Pay</h1>
+              <h1 className="text-3xl font-bold">{getPageTitle()}</h1>
               <div className="flex items-center space-x-4">
                 <ConnectWalletButton />
                 
-                {/* Pay Bill Button with Modal */}
-                <div className="relative">
-                  <button 
-                    ref={buttonRef}
-                    className="bg-gray-200 hover:bg-gray-300 text-black font-medium py-2 px-16 rounded"
-                    onClick={() => setShowPayBillModal(!showPayBillModal)}
-                  >
-                    Pay Bill
-                  </button>
-                  
-                  {/* Pay Bill Modal */}
-                  {showPayBillModal && (
-                    <div 
-                      ref={modalRef}
-                      className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded shadow-lg z-20 w-[450px]"
+                {/* Pay Bill Button - only show when in Bills section */}
+                {activeSidebarItem === 'bills' && (
+                  <div className="relative">
+                    <button 
+                      ref={buttonRef}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                      onClick={() => setShowPayBillModal(!showPayBillModal)}
                     >
-                      <div className="p-6">
-                        <InvoiceUpload
-                          onFileSelect={handleFileUpload}
-                          onPayWithoutInvoice={handlePayWithoutInvoice}
-                          title="Select an invoice to upload"
-                          className=""
-                        />
+                      Pay Bill
+                    </button>
+                    
+                    {/* Pay Bill Modal */}
+                    {showPayBillModal && (
+                      <div 
+                        ref={modalRef}
+                        className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
+                      >
+                        <div className="p-6">
+                          <InvoiceUpload
+                            onFileSelect={handleFileUpload}
+                            onPayWithoutInvoice={handlePayWithoutInvoice}
+                            title="Select an invoice to upload"
+                            className=""
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
-          {/* Tab Navigation */}
-          <div className="border-b border-gray-200">
-            <div className="flex">
-              <button
-                onClick={() => setActiveTab('payments')}
-                className={`py-4 px-8 mr-8 font-medium text-sm ${
-                  activeTab === 'payments'
-                    ? 'border-b-2 border-black text-black'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Payments
-              </button>
-              <button
-                onClick={() => setActiveTab('vendors')}
-                className={`py-4 px-8 font-medium text-sm ${
-                  activeTab === 'vendors'
-                    ? 'border-b-2 border-black text-black'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Vendors
-              </button>
-            </div>
-          </div>
-          
-          {/* Tab Content */}
+          {/* Main Content Area */}
           <div className="p-8">
-            {activeTab === 'payments' && (
-              <div className="min-h-[400px]">
-                <PaymentsTab key={paymentsKey} />
-              </div>
-            )}
-            
-            {activeTab === 'vendors' && (
-              <div className="min-h-[400px]">
-                <VendorsTab />
-              </div>
-            )}
+            {renderMainContent()}
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
-import InvoiceUpload from '../invoices/InvoiceUpload';
+import BillPaymentInitiator from './BillPaymentInitiator';
 import PaymentFlow from '../payments/PaymentFlow';
 
 export default function BillsView() {
@@ -155,7 +155,7 @@ export default function BillsView() {
               className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
             >
               <div className="p-6">
-                <InvoiceUpload
+                <BillPaymentInitiator
                   onFileSelect={handleFileUpload}
                   onPayWithoutInvoice={handlePayWithoutInvoice}
                   title="Select an invoice to upload"

@@ -119,7 +119,7 @@ export default function SidePanel({
       {/* Panel Container */}
       <div 
         ref={panelRef}
-        className={`fixed right-0 top-0 h-full ${WIDTHS[width]} z-50 transform transition-transform duration-300 ease-in-out ${className}`}
+        className={`fixed right-0 top-0 h-full ${WIDTHS[width]} z-50 transform transition-transform duration-300 ease-in-out outline-none ${className}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'panel-title' : undefined}

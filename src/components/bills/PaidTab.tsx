@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import BillsTable from './BillsTable';
 import PaymentFlow from '../payments/PaymentFlow';
-import InvoiceUpload from '../invoices/InvoiceUpload';
+import BillPaymentInitiator from './BillPaymentInitiator';
 
 export default function PaidTab() {
   // Payment flow state for empty state CTA
@@ -59,7 +59,7 @@ export default function PaidTab() {
 
   // Empty state component for when no payments exist
   const emptyStateComponent = (
-    <InvoiceUpload
+    <BillPaymentInitiator
       onFileSelect={handleFileUpload}
       onPayWithoutInvoice={handlePayWithoutInvoice}
       className="max-w-2xl mx-auto"

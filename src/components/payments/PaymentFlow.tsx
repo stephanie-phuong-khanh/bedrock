@@ -9,7 +9,7 @@ import InvoicePanel from '../invoices/InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
 import CompletedPayment from './CompletedPayment';
-import SidePanel from '../common/SidePanel';
+import SidePanel from '../dashboard/SidePanel';
 import {
   getTokenContractAddress,
   isCryptocurrencyEnabled,

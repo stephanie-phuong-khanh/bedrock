@@ -41,7 +41,7 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
   ];
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 min-h-screen flex flex-col">
+    <div className="w-64 bg-gray-50 min-h-screen flex flex-col">
       {/* Logo/Brand area */}
       <div className="p-6 flex items-center">
         <Image 

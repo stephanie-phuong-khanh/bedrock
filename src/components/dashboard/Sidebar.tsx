@@ -6,13 +6,13 @@ import Image from 'next/image';
 import { useState } from 'react';
 import ConnectWalletButton from './ConnectWalletButton';
 
-interface SidebarProps {
+interface SideBarProps {
   session: Session | null;
   activeItem: string;
   onItemChange: (item: string) => void;
 }
 
-export default function Sidebar({ session, activeItem, onItemChange }: SidebarProps) {
+export default function SideBar({ session, activeItem, onItemChange }: SideBarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSignOut = async () => {

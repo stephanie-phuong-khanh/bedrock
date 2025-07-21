@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   className?: string;
@@ -15,16 +15,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     
     // Minimum width ensures consistent button sizes
     const sizeClasses = {
-      sm: 'px-4 py-2 text-sm min-w-[80px]',
-      md: 'px-6 py-2 text-sm min-w-[100px]',
-      lg: 'px-8 py-3 text-base min-w-[120px]'
+      sm: 'px-4 py-2 text-sm min-w-[100px]',
+      md: 'px-6 py-2 text-sm min-w-[140px]',
+      lg: 'px-8 py-3 text-base min-w-[160px]'
     };
 
     const variantClasses = {
       primary: 'btn-primary focus:ring-primary-500',
-      secondary: 'btn-secondary focus:ring-primary-500',
-      outline: 'border border-primary-600 text-primary-600 bg-transparent hover:bg-primary-50 focus:ring-primary-500',
-      ghost: 'text-primary-600 bg-transparent hover:bg-primary-50 focus:ring-primary-500'
+      secondary: 'btn-secondary focus:ring-primary-500'
     };
 
     const combinedClassName = `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`.trim();

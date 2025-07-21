@@ -8,6 +8,7 @@ import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
 import BillPaymentInitiator from './BillPaymentInitiator';
 import PaymentFlow from './PaymentFlow';
+import Button from '../dashboard/Button';
 
 export default function BillsView() {
   const router = useRouter();
@@ -140,13 +141,13 @@ export default function BillsView() {
       <div className="flex justify-between items-center">
         <h1 className="text-page-title">Bills</h1>
         <div className="relative">
-          <button 
+          <Button 
             ref={buttonRef}
-            className="btn-base btn-primary py-2 px-6"
+            size="md"
             onClick={() => setShowPayBillModal(!showPayBillModal)}
           >
             Pay bill
-          </button>
+          </Button>
           
           {/* Pay Bill Modal */}
           {showPayBillModal && (

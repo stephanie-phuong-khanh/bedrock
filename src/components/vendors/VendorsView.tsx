@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
 import VendorForm from './VendorForm';
 import SidePanel from '../dashboard/SidePanel';
+import Button from '../dashboard/Button';
 
 export default function VendorsView() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -109,12 +110,12 @@ export default function VendorsView() {
       {/* Header with Add vendor button */}
       <div className="flex justify-between items-center">
         <h1 className="text-page-title">Vendors</h1>
-        <button 
-          className="btn-base btn-primary py-2 px-6"
+        <Button 
+          size="md"
           onClick={handleAddVendorClick}
         >
           Add vendor
-        </button>
+        </Button>
       </div>
 
       {/* Main content */}

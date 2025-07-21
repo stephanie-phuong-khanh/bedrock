@@ -6,8 +6,8 @@ import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
-import InvoiceUpload from '../invoices/InvoiceUpload';
-import PaymentFlow from '../payments/PaymentFlow';
+import BillPaymentInitiator from './BillPaymentInitiator';
+import PaymentFlow from './PaymentFlow';
 
 export default function BillsView() {
   const router = useRouter();
@@ -62,11 +62,31 @@ export default function BillsView() {
     try {
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
-      setShowPaymentFlow(true);
       setShowPayBillModal(false);
+      setShowPaymentFlow(true);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
+    }
+  };
+
+  // Handle invoice deletion
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    try {
+      // Call API to delete invoice
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete invoice');
+      }
+      
+      // Clear current invoice and close payment flow
+      setCurrentInvoice(null);
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      alert('Failed to delete invoice. Please try again.');
     }
   };
 
@@ -135,7 +155,7 @@ export default function BillsView() {
               className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
             >
               <div className="p-6">
-                <InvoiceUpload
+                <BillPaymentInitiator
                   onFileSelect={handleFileUpload}
                   onPayWithoutInvoice={handlePayWithoutInvoice}
                   title="Select an invoice to upload"
@@ -176,6 +196,8 @@ export default function BillsView() {
         <PaymentFlow
           invoice={currentInvoice}
           onClose={handleClosePaymentFlow}
+          onUploadInvoice={handleFileUpload}
+          onDelete={handleDeleteInvoice}
           onPaymentSuccess={handlePaymentSuccess}
         />
       )}

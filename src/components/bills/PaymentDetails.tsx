@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/crypto';
 import { PaymentWithVendorName } from '@/types/payments';
 import { Invoice } from '@/types/supabase';
+import SidePanel from '../dashboard/SidePanel';
+import InvoicePanel from './InvoicePanel';
 
 interface PaymentDetailsProps {
   payment: PaymentWithVendorName | null;
@@ -14,7 +16,6 @@ interface PaymentDetailsProps {
 export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDetailsProps) {
   const [invoice, setInvoice] = useState<Invoice & { fileUrl?: string } | null>(null);
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
-  const [isPdf, setIsPdf] = useState(true);
 
   // Format the date in a readable format
   const formatDate = (dateString: string | null) => {
@@ -42,14 +43,6 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
           const data = await response.json();
           if (data.success) {
             setInvoice(data.invoice);
-            
-            // Determine if the file is a PDF
-            const invoiceData = data.invoice;
-            const isPdfFile = 
-              invoiceData.file_path?.toLowerCase().endsWith('.pdf') || 
-              invoiceData.fileUrl?.toLowerCase().includes('.pdf') ||
-              invoiceData.fileUrl?.toLowerCase().includes('application/pdf');
-            setIsPdf(isPdfFile);
           }
         }
       } catch (error) {
@@ -66,85 +59,38 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
 
   if (!isOpen || !payment) return null;
 
-  return (
-    <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-      />
-      
-      {/* Side Panel - Width adjusts based on invoice presence */}
-      <div className={`fixed right-0 top-0 h-full ${payment.invoice_id ? 'w-[80vw]' : 'w-[40vw]'} bg-white shadow-xl z-50 flex`}>
-        {/* Invoice Panel - Left Side */}
-        {payment.invoice_id && (
-          <div className="w-1/2 border-r border-gray-200 p-6 overflow-auto">
-            {isLoadingInvoice ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
-              </div>
-            ) : invoice && invoice.fileUrl ? (
-              <div className="flex flex-col h-full">
-                <div className="flex-1 bg-gray-100 rounded-md flex items-center justify-center">
-                  {isPdf ? (
-                    <object 
-                      data={invoice.fileUrl}
-                      type="application/pdf"
-                      className="w-full h-full"
-                    >
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <p className="mb-4 text-gray-600">Unable to display PDF directly.</p>
-                        <a 
-                          href={invoice.fileUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Open PDF in new tab
-                        </a>
-                      </div>
-                    </object>
-                  ) : (
-                    <div className="text-center">
-                      <p className="text-gray-600 mb-4">This file type is not supported for preview.</p>
-                      <a 
-                        href={invoice.fileUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        Download File
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p>No invoice available</p>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Payment Details Panel - Right Side */}
-        <div className={`${payment.invoice_id ? 'w-1/2' : 'w-full'} overflow-y-auto`}>
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">Payment details</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+  // Convert invoice to InvoiceWithFileUrl format for InvoicePanel
+  const invoiceForPanel = invoice ? {
+    ...invoice,
+    fileUrl: invoice.fileUrl || ''
+  } : null;
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Amount */}
+  return (
+    <SidePanel
+      isOpen={isOpen}
+      onClose={onClose}
+      layout={payment.invoice_id ? 'dual' : 'single'}
+      title="Payment details"
+      width={payment.invoice_id ? 'full' : 'wide'}
+      leftContent={payment.invoice_id ? (
+        isLoadingInvoice ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+          </div>
+        ) : invoiceForPanel ? (
+          <InvoicePanel 
+            invoice={invoiceForPanel}
+            // No onUploadInvoice or onDelete props = read-only mode
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <p>No invoice available</p>
+          </div>
+        )
+      ) : undefined}
+      rightContent={
+        <div className="p-6 space-y-6">
+          {/* Amount */}
             <div>
               <h3 className="text-sm font-medium text-gray-500 mb-1">Amount</h3>
               <p className="text-2xl font-semibold text-gray-900">{payment.fiat_amount} {payment.fiat_currency}</p>
@@ -251,9 +197,8 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 </a>
               </div>
             )}
-          </div>
         </div>
-      </div>
-    </>
+      }
+    />
   );
 }

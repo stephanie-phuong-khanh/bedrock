@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
 import VendorForm from './VendorForm';
+import SidePanel from '../dashboard/SidePanel';
 
 export default function VendorsView() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -185,54 +186,49 @@ export default function VendorsView() {
         )}
       </div>
       
-      {/* Side panel for adding/editing vendor */}
-      <div 
-        className={`fixed inset-y-0 right-0 w-full md:w-2/3 lg:w-1/2 bg-white shadow-xl transform ${
-          isSidePanelOpen ? 'translate-x-0' : 'translate-x-full'
-        } transition-transform duration-300 ease-in-out z-20`}
-      >
-        <div className="h-full overflow-y-auto p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-medium">
-              {isEditing ? 'Edit Vendor' : 'Add New Vendor'}
-            </h2>
-            <button 
-              onClick={() => {
-                setIsSidePanelOpen(false);
-                // Reset editing state when closing
-                if (isEditing) {
-                  setTimeout(() => {
-                    setIsEditing(false);
-                    setCurrentVendor(undefined);
-                  }, 300); // Wait for animation to complete
-                }
-              }}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <span className="text-2xl">&times;</span>
-            </button>
+      {/* Side Panel for adding/editing vendor */}
+      <SidePanel
+        isOpen={isSidePanelOpen}
+        onClose={() => {
+          setIsSidePanelOpen(false);
+          // Reset editing state when closing
+          if (isEditing) {
+            setTimeout(() => {
+              setIsEditing(false);
+              setCurrentVendor(undefined);
+            }, 300); // Wait for animation to complete
+          }
+        }}
+        layout="single"
+        title={isEditing ? 'Edit vendor' : 'Add vendor'}
+        width="wide"
+        rightContent={
+          <div className="p-8">
+            <VendorForm 
+              onSuccess={handleVendorAdded} 
+              vendor={currentVendor}
+              isEditing={isEditing}
+            />
           </div>
-          
-          <VendorForm 
-            onSuccess={handleVendorAdded} 
-            vendor={currentVendor}
-            isEditing={isEditing}
-          />
-        </div>
-      </div>
-      
-      {/* Overlay when side panel is open */}
-      {isSidePanelOpen && (
-        <div 
-          className="fixed inset-0 bg-black/85 z-10"
-          onClick={() => setIsSidePanelOpen(false)}
-        />
-      )}
+        }
+      />
       
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-30" onClick={handleDeleteCancel} />
+          <div 
+            className="fixed inset-0 bg-black/85 z-30" 
+            style={{ 
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100vw',
+              height: '100vh'
+            }}
+            onClick={handleDeleteCancel} 
+          />
           <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-xl z-40 w-full max-w-md">
             <h3 className="text-xl font-medium mb-4">Confirm Deletion</h3>
             <p className="mb-6">

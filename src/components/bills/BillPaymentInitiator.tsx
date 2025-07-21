@@ -2,7 +2,7 @@
 
 import { useState, useRef, DragEvent } from 'react';
 
-interface InvoiceUploadCTAProps {
+interface BillPaymentInitiatorProps {
   onFileSelect: (file: File) => void;
   onPayWithoutInvoice: () => void;
   title?: string;
@@ -10,13 +10,13 @@ interface InvoiceUploadCTAProps {
   className?: string;
 }
 
-export default function InvoiceUpload({ 
+export default function BillPaymentInitiator({ 
   onFileSelect, 
   onPayWithoutInvoice, 
   title = "Upload an invoice to get started",
   subtitle,
   className = ""
-}: InvoiceUploadCTAProps) {
+}: BillPaymentInitiatorProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -68,12 +68,12 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
       </nav>
 
       {/* Connect Wallet Section */}
-      <div className="px-4 py-4">
+      <div className="px-4 pt-4 pb-2">
         <ConnectWalletButton />
       </div>
 
       {/* User Profile Section */}
-      <div className="p-4">
+      <div className="px-4 pt-2 pb-4">
         <AccountButton session={session} />
       </div>
     </div>

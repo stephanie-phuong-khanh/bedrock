@@ -170,12 +170,12 @@ export default function BillsView() {
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
-        <nav className="flex space-x-24">
+        <nav className="flex space-x-20">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabNavigation(tab.id)}
-              className={`py-2 px-16 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 px-20 border-b-2 font-medium text-sm transition-colors ${
                 activeBillsTab === tab.id
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

@@ -1,10 +1,9 @@
 'use client';
 
 import { Session } from 'next-auth';
-import { signOut } from "next-auth/react";
 import Image from 'next/image';
-import { useState } from 'react';
 import ConnectWalletButton from './ConnectWalletButton';
+import AccountButton from './AccountButton';
 
 interface SideBarProps {
   session: Session | null;
@@ -13,11 +12,6 @@ interface SideBarProps {
 }
 
 export default function SideBar({ session, activeItem, onItemChange }: SideBarProps) {
-  const [showUserMenu, setShowUserMenu] = useState(false);
-
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: '/' });
-  };
 
   const sidebarItems = [
     {
@@ -79,55 +73,8 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
       </div>
 
       {/* User Profile Section */}
-      <div className="border-t border-gray-200 p-4">
-        <div className="relative">
-          <button 
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-full flex items-center px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden mr-3">
-              {session?.user?.image ? (
-                <Image 
-                  src={session.user.image} 
-                  alt="User avatar" 
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-gray-600 text-xs font-medium">
-                  {session?.user?.name?.charAt(0) || 'U'}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {session?.user?.name || 'User'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {session?.user?.email}
-              </p>
-            </div>
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-          
-          {/* User menu dropdown */}
-          {showUserMenu && (
-            <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg py-1 z-10 border border-gray-200">
-              <button
-                onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
+      <div className="pl-6 pr-4 pt-2 pb-4">
+        <AccountButton session={session} />
       </div>
     </div>
   );

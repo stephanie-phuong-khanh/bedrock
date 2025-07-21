@@ -62,11 +62,31 @@ export default function BillsView() {
     try {
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
-      setShowPaymentFlow(true);
       setShowPayBillModal(false);
+      setShowPaymentFlow(true);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
+    }
+  };
+
+  // Handle invoice deletion
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    try {
+      // Call API to delete invoice
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete invoice');
+      }
+      
+      // Clear current invoice and close payment flow
+      setCurrentInvoice(null);
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      alert('Failed to delete invoice. Please try again.');
     }
   };
 
@@ -176,6 +196,8 @@ export default function BillsView() {
         <PaymentFlow
           invoice={currentInvoice}
           onClose={handleClosePaymentFlow}
+          onUploadInvoice={handleFileUpload}
+          onDelete={handleDeleteInvoice}
           onPaymentSuccess={handlePaymentSuccess}
         />
       )}

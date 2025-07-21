@@ -9,6 +9,7 @@ import InvoicePanel from '../invoices/InvoicePanel';
 import PaymentForm, { PaymentFormData } from './PaymentForm';
 import ConfirmPayment from './ConfirmPayment';
 import CompletedPayment from './CompletedPayment';
+import SidePanel from '../common/SidePanel';
 import {
   getTokenContractAddress,
   isCryptocurrencyEnabled,
@@ -287,93 +288,69 @@ export default function PaymentFlow({
   };
 
   return (
-    <>
-      {/* Overlay */}
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-85 z-10"
-        style={{ backgroundColor: 'rgba(0, 0, 0, 0.85)' }}
-        onClick={onClose}
-      />
-      
-      {/* Modal Container */}
-      <div className={`fixed inset-y-0 right-0 ${invoice ? 'w-5/6' : 'w-full md:w-2/3 lg:w-1/2'} bg-white shadow-xl z-20 flex`}>
-        {/* Invoice Panel - positioned to the left within the modal */}
-        {invoice && (
-          <div className="w-1/2 border-r border-gray-200">
-            <InvoicePanel 
-              invoice={invoice}
-              onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
-              onDelete={showConfirmation || showCompleted ? undefined : onDelete}
+    <SidePanel
+      isOpen={true}
+      onClose={onClose}
+      layout="dual"
+      title="Pay bill"
+      width="full"
+      leftContent={
+        <InvoicePanel 
+          invoice={invoice}
+          onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
+          onDelete={showConfirmation || showCompleted ? undefined : onDelete}
+        />
+      }
+      rightContent={
+        <div className="p-8">
+          {!showConfirmation && !showCompleted && (
+            <PaymentForm
+              vendors={vendors}
+              isLoadingVendors={isLoadingVendors}
+              errorMessage={errorMessage}
+              onSubmit={handleFormSubmit}
+              selectedVendor={selectedVendor}
+              onVendorChange={handleVendorChange}
+              initialFormData={paymentData}
             />
-          </div>
-        )}
+          )}
+          
+          {showConfirmation && !showCompleted && paymentData && (
+            <ConfirmPayment
+              selectedVendor={paymentData.selectedVendor}
+              fiatAmount={paymentData.fiatAmount}
+              fiatCurrency={paymentData.fiatCurrency}
+              cryptoAsset={paymentData.cryptoAsset}
+              cryptoAmount={paymentData.cryptoAmount}
+              fxRate={paymentData.fxRate}
+              walletAddress={paymentData.walletAddress}
+              network={paymentData.network}
+              memo={paymentData.memo}
+              onBack={handleBack}
+              onConfirm={handleConfirmPayment}
+              isProcessingPayment={isProcessingPayment}
+              paymentError={paymentError}
+              paymentSuccess={paymentSuccess}
+              txHash={txHash}
+            />
+          )}
 
-        {/* Payment Panel */}
-        <div className={`bg-white h-full flex flex-col ${
-          invoice ? 'w-1/2' : 'w-full'
-        } relative z-20`}>
-          <div className="flex-1 overflow-y-auto p-8">
-            {/* Close button positioned at the top right of the payment panel */}
-            <button 
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            <h2 className="text-4xl font-bold mb-6">Pay Bill</h2>
-            
-            {!showConfirmation && !showCompleted && (
-              <PaymentForm
-                vendors={vendors}
-                isLoadingVendors={isLoadingVendors}
-                errorMessage={errorMessage}
-                onSubmit={handleFormSubmit}
-                selectedVendor={selectedVendor}
-                onVendorChange={handleVendorChange}
-                initialFormData={paymentData}
-              />
-            )}
-            
-            {showConfirmation && !showCompleted && paymentData && (
-              <ConfirmPayment
-                selectedVendor={paymentData.selectedVendor}
-                fiatAmount={paymentData.fiatAmount}
-                fiatCurrency={paymentData.fiatCurrency}
-                cryptoAsset={paymentData.cryptoAsset}
-                cryptoAmount={paymentData.cryptoAmount}
-                fxRate={paymentData.fxRate}
-                walletAddress={paymentData.walletAddress}
-                network={paymentData.network}
-                memo={paymentData.memo}
-                onBack={handleBack}
-                onConfirm={handleConfirmPayment}
-                isProcessingPayment={isProcessingPayment}
-                paymentError={paymentError}
-                paymentSuccess={paymentSuccess}
-                txHash={txHash}
-              />
-            )}
-
-            {showCompleted && paymentData && txHash && (
-              <CompletedPayment
-                selectedVendor={paymentData.selectedVendor}
-                fiatAmount={paymentData.fiatAmount}
-                fiatCurrency={paymentData.fiatCurrency}
-                cryptoAsset={paymentData.cryptoAsset}
-                cryptoAmount={paymentData.cryptoAmount}
-                fxRate={paymentData.fxRate}
-                walletAddress={paymentData.walletAddress}
-                network={paymentData.network}
-                txHash={txHash}
-                onClose={handleClose}
-              />
-            )}
-          </div>
+          {showCompleted && paymentData && txHash && (
+            <CompletedPayment
+              selectedVendor={paymentData.selectedVendor}
+              fiatAmount={paymentData.fiatAmount}
+              fiatCurrency={paymentData.fiatCurrency}
+              cryptoAsset={paymentData.cryptoAsset}
+              cryptoAmount={paymentData.cryptoAmount}
+              fxRate={paymentData.fxRate}
+              walletAddress={paymentData.walletAddress}
+              network={paymentData.network}
+              txHash={txHash}
+              onClose={handleClose}
+            />
+          )}
         </div>
-      </div>
-    </>
+      }
+    />
   );
 }

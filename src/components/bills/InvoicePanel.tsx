@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Worker, Viewer } from '@react-pdf-viewer/core';
+import '@react-pdf-viewer/core/lib/styles/index.css';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 
 interface InvoicePanelProps {
@@ -108,40 +110,32 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
         <div className="h-full relative">
           {/* Delete button - top right */}
           {onDelete && invoice && (
-            <div className="absolute top-4 right-6 z-10">
+            <div className="absolute top-4 right-4 z-10">
               <button
                 onClick={() => onDelete(invoice.id)}
                 className="w-8 h-8 bg-white border-2 border-red-500 rounded-full flex items-center justify-center hover:bg-red-50 transition-colors duration-200 shadow-sm"
                 title="Delete Invoice"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           )}
           
           {/* Minimal PDF Viewer */}
-          <div className="h-full overflow-auto p-6 pt-12">
+          <div className="h-full overflow-auto p-6">
             {isPdf ? (
-              <object 
-                data={invoice.fileUrl}
-                type="application/pdf"
-                className="w-full min-h-full"
-                style={{ height: '100vh' }}
-              >
-                <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">
-                  <p className="mb-4 text-gray-600">Unable to display PDF directly.</p>
-                  <a 
-                    href={invoice.fileUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Open PDF in new tab
-                  </a>
-                </div>
-              </object>
+              <div className="w-full h-full">
+                <Worker workerUrl={`https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`}>
+                  <div className="w-full h-full">
+                    <Viewer 
+                      fileUrl={invoice.fileUrl}
+                      defaultScale={0.9}
+                    />
+                  </div>
+                </Worker>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">
                 <p className="text-gray-600 mb-4">This file type is not supported for preview.</p>
@@ -178,8 +172,10 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
                   </div>
-                  <p className="text-gray-700 mb-1">Drag and drop your invoice here, or</p>
-                  <p className="text-blue-600 font-medium mb-4">browse files</p>
+                  <div className="mb-4 font-medium">
+                    <span className="text-gray-800">Drop invoice or </span>
+                    <span style={{ color: 'var(--color-primary)' }}>browse files</span>
+                  </div>
                   <p className="text-sm text-gray-500">PDF files only</p>
                   
                   {uploadError && (

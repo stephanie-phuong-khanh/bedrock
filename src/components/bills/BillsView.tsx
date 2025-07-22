@@ -159,8 +159,6 @@ export default function BillsView() {
                 <BillPaymentInitiator
                   onFileSelect={handleFileUpload}
                   onPayWithoutInvoice={handlePayWithoutInvoice}
-                  title="Select an invoice to upload"
-                  className=""
                 />
               </div>
             </div>

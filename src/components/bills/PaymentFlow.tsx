@@ -236,8 +236,7 @@ export default function PaymentFlow({
       setPaymentSuccess(true);
       setShowCompleted(true);
       
-      // Notify parent component of successful payment
-      onPaymentSuccess?.();
+      // Don't call onPaymentSuccess here - let user see CompletedPayment first
     } catch (error: unknown) {
       console.error('Payment failed:', error);
       
@@ -279,6 +278,10 @@ export default function PaymentFlow({
   };
 
   const handleClose = () => {
+    // If payment was completed successfully, notify parent before closing
+    if (showCompleted && paymentSuccess) {
+      onPaymentSuccess?.();
+    }
     onClose();
   };
 
@@ -287,12 +290,23 @@ export default function PaymentFlow({
     setPaymentError(null); // Clear any previous errors when going back
   };
 
+  // Dynamic title based on current step
+  const getTitle = () => {
+    if (showCompleted) {
+      return "Payment confirmed";
+    }
+    if (!showConfirmation && !showCompleted) {
+      return "New bill";
+    }
+    return "Pay bill";
+  };
+
   return (
     <SidePanel
       isOpen={true}
       onClose={onClose}
       layout="dual"
-      title="Pay bill"
+      title={getTitle()}
       width="full"
       leftContent={
         <InvoicePanel 
@@ -302,7 +316,7 @@ export default function PaymentFlow({
         />
       }
       rightContent={
-        <div className="p-8">
+        <div className="p-6">
           {!showConfirmation && !showCompleted && (
             <PaymentForm
               vendors={vendors}
@@ -322,10 +336,13 @@ export default function PaymentFlow({
               fiatCurrency={paymentData.fiatCurrency}
               cryptoAsset={paymentData.cryptoAsset}
               cryptoAmount={paymentData.cryptoAmount}
-              fxRate={paymentData.fxRate}
               walletAddress={paymentData.walletAddress}
               network={paymentData.network}
               memo={paymentData.memo}
+              category={paymentData.category}
+              invoiceNumber={paymentData.invoiceNumber}
+              invoiceDate={paymentData.invoiceDate}
+              dueDate={paymentData.dueDate}
               onBack={handleBack}
               onConfirm={handleConfirmPayment}
               isProcessingPayment={isProcessingPayment}
@@ -342,7 +359,6 @@ export default function PaymentFlow({
               fiatCurrency={paymentData.fiatCurrency}
               cryptoAsset={paymentData.cryptoAsset}
               cryptoAmount={paymentData.cryptoAmount}
-              fxRate={paymentData.fxRate}
               walletAddress={paymentData.walletAddress}
               network={paymentData.network}
               txHash={txHash}

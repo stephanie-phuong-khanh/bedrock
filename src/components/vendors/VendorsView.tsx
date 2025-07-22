@@ -202,9 +202,9 @@ export default function VendorsView() {
         }}
         layout="single"
         title={isEditing ? 'Edit vendor' : 'Add vendor'}
-        width="wide"
+        width="half"
         rightContent={
-          <div className="p-8">
+          <div className="p-6">
             <VendorForm 
               onSuccess={handleVendorAdded} 
               vendor={currentVendor}

@@ -1,10 +1,9 @@
 'use client';
 
-import { DynamicEmbeddedWidget, DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
-import { formatTruncatedAddress, formatStyledAddress } from '@/lib/wallet-utils';
-import { FormSection, FormInput } from '../forms';
+import { FormSection } from '../forms';
 import Button from '../dashboard/Button';
 
 interface ConfirmPaymentProps {
@@ -13,7 +12,6 @@ interface ConfirmPaymentProps {
   fiatCurrency: string;
   cryptoAsset: string;
   cryptoAmount: string;
-  fxRate: number;
   walletAddress: string;
   network: string;
   memo: string;
@@ -35,7 +33,6 @@ export default function ConfirmPayment({
   fiatCurrency,
   cryptoAsset,
   cryptoAmount,
-  fxRate,
   walletAddress,
   network,
   memo,
@@ -51,7 +48,6 @@ export default function ConfirmPayment({
   txHash = null
 }: ConfirmPaymentProps) {
   const { primaryWallet } = useDynamicContext();
-  const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   return (

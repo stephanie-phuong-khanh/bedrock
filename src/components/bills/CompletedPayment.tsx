@@ -2,7 +2,7 @@
 
 import { Vendor } from '@/types/supabase';
 import { getBlockExplorerUrl, getNetwork } from '../../constants/crypto';
-import { FormSection, FormInput } from '../forms';
+import { FormInput } from '../forms';
 import Button from '../dashboard/Button';
 
 interface CompletedPaymentProps {
@@ -32,22 +32,23 @@ export default function CompletedPayment({
   const networkInfo = getNetwork(network);
 
   return (
-    <div className="px-4 pt-2 pb-4 space-y-8">
+    <div className="px-4 pt-2 pb-4 space-y-6">
       {/* Success Header */}
-      <div className="text-center space-y-4">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="flex items-center justify-between">
+        <div className="text-left">
+          <h2 className="text-2xl font-normal text-gray-900">Payment complete!</h2>
+          <p className="text-gray-600 text-sm">Your payment has been successfully processed</p>
+        </div>
+        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Payment complete!</h2>
-          <p className="text-gray-600 mt-2">Your payment has been successfully processed</p>
-        </div>
       </div>
 
-      {/* Payment Details as Form-like Display */}
-      <FormSection title="Paid to">
+      {/* Payment Details - Using FormInput components for consistency */}
+      <div className="space-y-4 mt-8">
+        {/* Vendor */}
         <FormInput
           label="Vendor"
           id="vendor"
@@ -55,9 +56,8 @@ export default function CompletedPayment({
           onChange={() => {}} // No-op for read-only
           disabled
         />
-      </FormSection>
-
-      <FormSection title="Amount">
+        
+        {/* Amount */}
         <div className="grid grid-cols-2 gap-4">
           <FormInput
             label="Amount"
@@ -74,13 +74,22 @@ export default function CompletedPayment({
             disabled
           />
         </div>
-      </FormSection>
-
-      <FormSection title="Asset">
+        
+        {/* Paid to */}
+        <FormInput
+          label="Paid to"
+          id="paid-to"
+          value={walletAddress}
+          onChange={() => {}} // No-op for read-only
+          disabled
+          className="font-mono text-sm"
+        />
+        
+        {/* Asset & Network */}
         <div className="grid grid-cols-2 gap-4">
           <FormInput
-            label="Amount"
-            id="cryptoAmount"
+            label="Asset"
+            id="asset"
             value={`${cryptoAmount} ${cryptoAsset}`}
             onChange={() => {}} // No-op for read-only
             disabled
@@ -93,18 +102,20 @@ export default function CompletedPayment({
             disabled
           />
         </div>
-      </FormSection>
-
-      <FormSection title="Address">
+        
+        {/* Paid date */}
         <FormInput
-          label="Wallet Address"
-          id="address"
-          value={walletAddress}
+          label="Paid date"
+          id="paid-date"
+          value={new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          })}
           onChange={() => {}} // No-op for read-only
           disabled
-          className="font-mono text-sm"
         />
-      </FormSection>
+      </div>
 
       {/* View Transaction Link */}
       {blockExplorerUrl && (
@@ -113,7 +124,7 @@ export default function CompletedPayment({
             href={blockExplorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 w-full justify-center"
+            className="inline-flex items-center space-x-2 text-gray-900 hover:text-gray-700 text-sm font-medium underline"
           >
             <span>View transaction</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +135,7 @@ export default function CompletedPayment({
       )}
 
       {/* Action Button */}
-      <div className="flex justify-center pt-4">
+      <div className="flex justify-end pt-4">
         <Button
           variant="secondary"
           size="md"

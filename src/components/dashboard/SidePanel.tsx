@@ -9,7 +9,7 @@ interface SidePanelProps {
   title?: string;
   leftContent?: React.ReactNode;  // For invoices or other left-side content
   rightContent: React.ReactNode;  // Main content
-  width?: 'narrow' | 'medium' | 'wide' | 'full';
+  width?: 'full' | 'half';
   showCloseButton?: boolean;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
@@ -17,10 +17,8 @@ interface SidePanelProps {
 }
 
 const WIDTHS = {
-  narrow: 'w-80',      // 320px - for simple forms
-  medium: 'w-96',      // 384px - for standard forms  
-  wide: 'w-1/2',       // 50% - for content with details
-  full: 'w-4/5'        // 80% - for dual-panel layouts
+  full: 'w-4/5',       // 80% - for dual-panel layouts
+  half: 'w-2/5'        // 40% - for single-panel layouts
 } as const;
 
 export default function SidePanel({
@@ -30,7 +28,7 @@ export default function SidePanel({
   title,
   leftContent,
   rightContent,
-  width = layout === 'dual' ? 'full' : 'medium',
+  width = layout === 'dual' ? 'full' : 'half',
   showCloseButton = true,
   closeOnOverlayClick = true,
   closeOnEscape = true,

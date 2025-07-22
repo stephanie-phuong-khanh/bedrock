@@ -292,6 +292,9 @@ export default function PaymentFlow({
 
   // Dynamic title based on current step
   const getTitle = () => {
+    if (showCompleted) {
+      return "Payment confirmed";
+    }
     if (!showConfirmation && !showCompleted) {
       return "New bill";
     }
@@ -313,7 +316,7 @@ export default function PaymentFlow({
         />
       }
       rightContent={
-        <div className="p-4">
+        <div className="p-6">
           {!showConfirmation && !showCompleted && (
             <PaymentForm
               vendors={vendors}
@@ -333,7 +336,6 @@ export default function PaymentFlow({
               fiatCurrency={paymentData.fiatCurrency}
               cryptoAsset={paymentData.cryptoAsset}
               cryptoAmount={paymentData.cryptoAmount}
-              fxRate={paymentData.fxRate}
               walletAddress={paymentData.walletAddress}
               network={paymentData.network}
               memo={paymentData.memo}

@@ -72,7 +72,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
       onClose={onClose}
       layout={payment.invoice_id ? 'dual' : 'single'}
       title="Payment details"
-      width={payment.invoice_id ? 'full' : 'wide'}
+      width={payment.invoice_id ? 'full' : 'half'}
       leftContent={payment.invoice_id ? (
         isLoadingInvoice ? (
           <div className="flex items-center justify-center h-full">
@@ -90,103 +90,102 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
         )
       ) : undefined}
       rightContent={
-        <div className="px-4 pt-2 pb-4 space-y-6">
-          <FormSection title="Payment Summary">
-            {/* Amount Display */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-center">
-                <p className="text-sm font-medium text-gray-500 mb-1">Amount Paid</p>
-                <p className="text-3xl font-bold text-gray-900">{payment.fiat_amount} {payment.fiat_currency}</p>
-              </div>
+        <div className="p-8 space-y-6">
+          {/* Overview Section */}
+          <FormSection title="Overview" collapsible defaultExpanded={false}>
+            <div className="cursor-not-allowed">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
+              <input
+                type="text"
+                value={`${payment.vendor_name}`}
+                disabled
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                readOnly
+              />
             </div>
-
-            {/* Payment Details */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-              {/* Asset */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Asset</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-blue-600">$</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{payment.crypto_amount} {payment.crypto_asset}</p>
-                    <p className="text-xs text-gray-500">USD Coin</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Network */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Network</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-white">E</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {getPaymentNetworkNameFromId(payment.payment_network)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Vendor */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Paid to</span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-gray-600">
-                      {payment.vendor_name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{payment.vendor_name}</p>
-                    {payment.vendor_email && (
-                      <p className="text-xs text-gray-500">{payment.vendor_email}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Date */}
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">Date Paid</span>
-                <div className="flex items-center space-x-2">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formatDate(payment.confirmed_at || payment.created_at)}
-                  </span>
-                </div>
-              </div>
+            
+            <div className="cursor-not-allowed">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Invoice #</label>
+              <input
+                type="text"
+                value={payment.invoice_data?.invoice_number || 'INV-2025-10292'}
+                disabled
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                readOnly
+              />
             </div>
           </FormSection>
 
-          {/* Invoice details */}
-          {payment.invoice_data && (
-            <FormSection title="Invoice Details">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Invoice #</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {payment.invoice_data.invoice_number}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Status</span>
-                  <span className="text-sm font-medium text-gray-900 capitalize">
-                    {payment.invoice_data.status}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-700">Created</span>
-                  <span className="text-sm font-medium text-gray-900">
-                    {formatDate(payment.invoice_data.created_at)}
-                  </span>
-                </div>
+          {/* Payment Details Section */}
+          <FormSection title="Payment Details" collapsible defaultExpanded={true}>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                <input
+                  type="text"
+                  value={payment.fiat_amount.toString()}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
               </div>
-            </FormSection>
-          )}
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <input
+                  type="text"
+                  value={payment.fiat_currency}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </div>
+            
+            <div className="cursor-not-allowed">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+              <input
+                type="text"
+                value={payment.receiver_wallet_address || '0xC54BA68e29bb591f072DD84dca9327206FfAFb5a'}
+                disabled
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
+                readOnly
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
+                <input
+                  type="text"
+                  value={`${payment.crypto_amount} ${payment.crypto_asset}`}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+                <input
+                  type="text"
+                  value={getPaymentNetworkNameFromId(payment.payment_network)}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </div>
+            
+            <div className="cursor-not-allowed">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Paid date</label>
+              <input
+                type="text"
+                value={formatDate(payment.confirmed_at || payment.created_at)}
+                disabled
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                readOnly
+              />
+            </div>
+          </FormSection>
 
           {/* Transaction link */}
           {payment.tx_hash && (
@@ -195,7 +194,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 href={getBlockExplorerUrl(payment.payment_network, payment.tx_hash)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200"
+                className="inline-flex items-center space-x-2 text-gray-900 hover:text-gray-700 text-sm font-medium underline"
               >
                 <span>View transaction</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

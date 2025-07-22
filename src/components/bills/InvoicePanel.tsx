@@ -1,19 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-
-// Dynamically import PDF components to avoid SSR issues
-const Worker = dynamic(
-  () => import('@react-pdf-viewer/core').then((mod) => mod.Worker),
-  { ssr: false }
-);
-
-const Viewer = dynamic(
-  () => import('@react-pdf-viewer/core').then((mod) => mod.Viewer),
-  { ssr: false }
-);
 
 interface InvoicePanelProps {
   invoice?: InvoiceWithFileUrl | null;
@@ -26,30 +14,12 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [pdfStylesLoaded, setPdfStylesLoaded] = useState(false);
+
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   
-  // Load PDF styles dynamically
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Create link element to load PDF viewer styles
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/@react-pdf-viewer/core@3.12.0/lib/styles/index.css';
-      link.onload = () => setPdfStylesLoaded(true);
-      link.onerror = () => setPdfStylesLoaded(true); // Still proceed even if CSS fails to load
-      document.head.appendChild(link);
-      
-      return () => {
-        // Cleanup: remove the link when component unmounts
-        if (document.head.contains(link)) {
-          document.head.removeChild(link);
-        }
-      };
-    }
-  }, []);
+
 
   // Determine if the file is a PDF based on file_path
   useEffect(() => {
@@ -158,20 +128,23 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
           <div className="h-full overflow-auto p-6">
             {isPdf ? (
               <div className="w-full h-full">
-                {!pdfStylesLoaded ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-gray-500">Loading PDF viewer...</div>
+                <object
+                  data={invoice.fileUrl}
+                  type="application/pdf"
+                  className="w-full h-full rounded"
+                >
+                  <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">
+                    <p className="text-gray-600 mb-4">PDF preview not available in this browser.</p>
+                    <a 
+                      href={invoice.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Open PDF in new tab
+                    </a>
                   </div>
-                ) : (
-                  <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
-                    <div className="w-full h-full">
-                      <Viewer 
-                        fileUrl={invoice.fileUrl}
-                        defaultScale={0.9}
-                      />
-                    </div>
-                  </Worker>
-                )}
+                </object>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">

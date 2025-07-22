@@ -7,6 +7,7 @@ import { Invoice } from '@/types/supabase';
 import SidePanel from '../dashboard/SidePanel';
 import InvoicePanel from './InvoicePanel';
 import { FormSection } from '../forms';
+import Button from '../dashboard/Button';
 
 interface PaymentDetailsProps {
   payment: PaymentWithVendorName | null;
@@ -90,119 +91,133 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
         )
       ) : undefined}
       rightContent={
-        <div className="p-8 space-y-6">
-          {/* Overview Section */}
-          <FormSection title="Overview" collapsible defaultExpanded={false}>
-            <div className="cursor-not-allowed">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
-              <input
-                type="text"
-                value={`${payment.vendor_name}`}
-                disabled
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                readOnly
-              />
-            </div>
-            
-            <div className="cursor-not-allowed">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Invoice #</label>
-              <input
-                type="text"
-                value={payment.invoice_data?.invoice_number || 'INV-2025-10292'}
-                disabled
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                readOnly
-              />
-            </div>
-          </FormSection>
+        <div className="p-8">
+          <div className="px-4 pt-2 pb-4 space-y-8 relative">
+            {/* Overview Section */}
+            <FormSection title="Overview" collapsible defaultExpanded={false}>
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
+                <input
+                  type="text"
+                  value={`${payment.vendor_name}`}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+              
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Invoice #</label>
+                <input
+                  type="text"
+                  value={payment.invoice_data?.invoice_number || 'INV-2025-10292'}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </FormSection>
 
-          {/* Payment Details Section */}
-          <FormSection title="Payment Details" collapsible defaultExpanded={true}>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Payment Details Section */}
+            <FormSection title="Payment Details" collapsible defaultExpanded={true}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                  <input
+                    type="text"
+                    value={payment.fiat_amount.toString()}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                  <input
+                    type="text"
+                    value={payment.fiat_currency}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+              </div>
+              
               <div className="cursor-not-allowed">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
                 <input
                   type="text"
-                  value={payment.fiat_amount.toString()}
+                  value={payment.receiver_wallet_address || '0xC54BA68e29bb591f072DD84dca9327206FfAFb5a'}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
+                  readOnly
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
+                  <input
+                    type="text"
+                    value={`${payment.crypto_amount} ${payment.crypto_asset}`}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+                  <input
+                    type="text"
+                    value={getPaymentNetworkNameFromId(payment.payment_network)}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+              </div>
+              
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paid date</label>
+                <input
+                  type="text"
+                  value={formatDate(payment.confirmed_at || payment.created_at)}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                   readOnly
                 />
               </div>
-              <div className="cursor-not-allowed">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                <input
-                  type="text"
-                  value={payment.fiat_currency}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                  readOnly
-                />
-              </div>
-            </div>
-            
-            <div className="cursor-not-allowed">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-              <input
-                type="text"
-                value={payment.receiver_wallet_address || '0xC54BA68e29bb591f072DD84dca9327206FfAFb5a'}
-                disabled
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
-                readOnly
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="cursor-not-allowed">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
-                <input
-                  type="text"
-                  value={`${payment.crypto_amount} ${payment.crypto_asset}`}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                  readOnly
-                />
-              </div>
-              <div className="cursor-not-allowed">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
-                <input
-                  type="text"
-                  value={getPaymentNetworkNameFromId(payment.payment_network)}
-                  disabled
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                  readOnly
-                />
-              </div>
-            </div>
-            
-            <div className="cursor-not-allowed">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Paid date</label>
-              <input
-                type="text"
-                value={formatDate(payment.confirmed_at || payment.created_at)}
-                disabled
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                readOnly
-              />
-            </div>
-          </FormSection>
+            </FormSection>
 
-          {/* Transaction link */}
-          {payment.tx_hash && (
-            <div className="pt-2">
-              <a
-                href={getBlockExplorerUrl(payment.payment_network, payment.tx_hash)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 text-gray-900 hover:text-gray-700 text-sm font-medium underline"
+            {/* Transaction link */}
+            {payment.tx_hash && (
+              <div className="pt-2">
+                <a
+                  href={getBlockExplorerUrl(payment.payment_network, payment.tx_hash)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center space-x-2 text-gray-900 hover:text-gray-700 text-sm font-medium underline"
+                >
+                  <span>View transaction</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              </div>
+            )}
+
+            {/* Action Button */}
+            <div className="flex justify-end pt-4">
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={onClose}
+                className="px-8"
               >
-                <span>View transaction</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+                Close
+              </Button>
             </div>
-          )}
+          </div>
         </div>
       }
     />

@@ -218,7 +218,7 @@ export default function VendorsView() {
       {showDeleteConfirm && (
         <>
           <div 
-            className="fixed inset-0 bg-black/85 z-30" 
+            className="fixed inset-0 bg-neutral-700/50 backdrop-blur-[2px] z-40 transition-all duration-300"
             style={{ 
               position: 'fixed',
               top: 0,

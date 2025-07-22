@@ -100,7 +100,7 @@ export default function SidePanel({
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-40 transition-all duration-300"
+        className="fixed inset-0 bg-neutral-700/50 backdrop-blur-[2px] z-40 transition-all duration-300"
         style={{ 
           position: 'fixed',
           top: 0,
@@ -136,7 +136,7 @@ export default function SidePanel({
             <div className="w-1/2 bg-white flex flex-col">
               {/* Header with title and close button */}
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+                <div className="flex items-center justify-between p-8 border-b border-gray-200 flex-shrink-0">
                   {title && (
                     <h2 id="panel-title" className="text-lg font-semibold text-gray-900">
                       {title}
@@ -167,7 +167,7 @@ export default function SidePanel({
           <div className="h-full bg-white flex flex-col rounded-tl-2xl">
             {/* Header with title and close button */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-between p-8 border-b border-gray-200 flex-shrink-0">
                 {title && (
                   <h2 id="panel-title" className="text-lg font-semibold text-gray-900">
                     {title}

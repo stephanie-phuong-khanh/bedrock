@@ -4,17 +4,17 @@ import { signIn } from "next-auth/react";
 
 export default function LoginView() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Bedrock</h1>
-          <p className="text-gray-600 mb-8">Manage your crypto bill payments</p>
+          <h1 className="text-4xl font-semibold text-gray-900 mb-2">Bedrock</h1>
+          <p className="text-gray-600 mb-8">Manage your stablecoin workflows</p>
         </div>
         
         <div className="space-y-6">
           <button
             onClick={() => signIn('google', { callbackUrl: '/' })}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-white border-gray-300 hover:bg-gray-50 focus:outline-none shadow-sm"
           >
             <span className="absolute left-0 inset-y-0 flex items-center pl-3">
               <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
@@ -28,7 +28,7 @@ export default function LoginView() {
           </button>
           
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-500">
               By continuing, you agree to our Terms of Service and Privacy Policy
             </p>
           </div>

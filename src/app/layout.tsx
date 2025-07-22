@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Bedrock",
   description: "Financial OS",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

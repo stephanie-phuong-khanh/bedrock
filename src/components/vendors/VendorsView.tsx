@@ -230,27 +230,38 @@ export default function VendorsView() {
             }}
             onClick={handleDeleteCancel} 
           />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-8 rounded-lg shadow-xl z-40 w-full max-w-md">
-            <h3 className="text-xl font-medium mb-4">Confirm Deletion</h3>
-            <p className="mb-6">
-              Are you sure you want to delete vendor <span className="font-medium">{vendorToDelete?.name}</span>? 
-              This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={handleDeleteCancel}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteConfirm}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md"
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Deleting...' : 'Delete'}
-              </button>
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md border border-gray-100">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100">
+              <h3 className="text-xl font-semibold text-gray-900">Confirm Deletion</h3>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="p-6">
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete vendor <span className="font-semibold text-gray-900">{vendorToDelete?.name}</span>? 
+                This action cannot be undone.
+              </p>
+              
+              {/* Modal Actions */}
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={handleDeleteCancel}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  size="md"
+                  onClick={handleDeleteConfirm}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
             </div>
           </div>
         </>

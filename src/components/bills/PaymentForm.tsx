@@ -27,6 +27,9 @@ export interface PaymentFormData {
   network: string;
   category: string;
   memo: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  dueDate: string;
 }
 
 export default function PaymentForm({ 
@@ -151,7 +154,10 @@ export default function PaymentForm({
       walletAddress,
       network,
       category,
-      memo
+      memo,
+      invoiceNumber,
+      invoiceDate,
+      dueDate
     });
   };
 

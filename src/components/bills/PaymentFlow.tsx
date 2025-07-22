@@ -337,6 +337,10 @@ export default function PaymentFlow({
               walletAddress={paymentData.walletAddress}
               network={paymentData.network}
               memo={paymentData.memo}
+              category={paymentData.category}
+              invoiceNumber={paymentData.invoiceNumber}
+              invoiceDate={paymentData.invoiceDate}
+              dueDate={paymentData.dueDate}
               onBack={handleBack}
               onConfirm={handleConfirmPayment}
               isProcessingPayment={isProcessingPayment}

@@ -62,7 +62,6 @@ export default function PaidTab() {
     <BillPaymentInitiator
       onFileSelect={handleFileUpload}
       onPayWithoutInvoice={handlePayWithoutInvoice}
-      className="max-w-2xl mx-auto"
     />
   );
 

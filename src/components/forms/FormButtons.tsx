@@ -1,5 +1,7 @@
 'use client';
 
+import Button from '../dashboard/Button';
+
 interface FormButtonsProps {
   primaryButton: {
     label: string;
@@ -14,45 +16,43 @@ interface FormButtonsProps {
     type?: 'button';
     disabled?: boolean;
   };
+  align?: 'left' | 'right' | 'center';
   className?: string;
 }
 
 export default function FormButtons({
   primaryButton,
   secondaryButton,
+  align = 'left',
   className = ''
 }: FormButtonsProps) {
+  const alignmentClass = {
+    left: 'justify-start',
+    right: 'justify-end',
+    center: 'justify-center'
+  }[align];
+
   return (
-    <div className={`flex gap-3 pt-6 ${className}`}>
+    <div className={`flex gap-3 pt-6 ${alignmentClass} ${className}`}>
       {secondaryButton && (
-        <button
+        <Button
+          variant="secondary"
+          size="md"
           type={secondaryButton.type || 'button'}
           onClick={secondaryButton.onClick}
           disabled={secondaryButton.disabled}
-          className="
-            flex-1 px-4 py-2.5 border border-gray-300 rounded-lg
-            text-gray-700 font-medium bg-white
-            hover:bg-gray-50 hover:border-gray-400
-            focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-colors duration-200
-          "
+          className={secondaryButton ? 'flex-1' : ''}
         >
           {secondaryButton.label}
-        </button>
+        </Button>
       )}
-      <button
+      <Button
+        variant="primary"
+        size="md"
         type={primaryButton.type || 'button'}
         onClick={primaryButton.onClick}
         disabled={primaryButton.disabled || primaryButton.loading}
-        className={`
-          px-4 py-2.5 rounded-lg font-medium text-white
-          bg-blue-600 hover:bg-blue-700
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          disabled:opacity-50 disabled:cursor-not-allowed
-          transition-colors duration-200
-          ${secondaryButton ? 'flex-1' : 'min-w-[120px]'}
-        `}
+        className={secondaryButton ? 'flex-1' : 'min-w-[120px]'}
       >
         {primaryButton.loading ? (
           <div className="flex items-center justify-center">
@@ -65,7 +65,7 @@ export default function FormButtons({
         ) : (
           primaryButton.label
         )}
-      </button>
+      </Button>
     </div>
   );
 }

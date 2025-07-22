@@ -287,12 +287,20 @@ export default function PaymentFlow({
     setPaymentError(null); // Clear any previous errors when going back
   };
 
+  // Dynamic title based on current step
+  const getTitle = () => {
+    if (!showConfirmation && !showCompleted) {
+      return "New bill";
+    }
+    return "Pay bill";
+  };
+
   return (
     <SidePanel
       isOpen={true}
       onClose={onClose}
       layout="dual"
-      title="Pay bill"
+      title={getTitle()}
       width="full"
       leftContent={
         <InvoicePanel 
@@ -302,7 +310,7 @@ export default function PaymentFlow({
         />
       }
       rightContent={
-        <div className="p-8">
+        <div className="p-4">
           {!showConfirmation && !showCompleted && (
             <PaymentForm
               vendors={vendors}

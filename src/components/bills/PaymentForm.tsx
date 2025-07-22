@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { Vendor } from '@/types/supabase';
 import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '../../constants/crypto';
-import { FormSection, FormInput, FormSelect, FormButtons, CurrencySelect, NetworkSelect } from '../forms';
+import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, CurrencySelect, NetworkSelect } from '../forms';
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -46,6 +46,9 @@ export default function PaymentForm({
   const [network, setNetwork] = useState<string>(initialFormData?.network || '');
   const [category, setCategory] = useState<string>(initialFormData?.category || '');
   const [memo, setMemo] = useState<string>(initialFormData?.memo || '');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>('');
+  const [invoiceDate, setInvoiceDate] = useState<string>('');
+  const [dueDate, setDueDate] = useState<string>('');
   const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
 
   // Initialize wallet address validation if initial data is provided
@@ -153,7 +156,7 @@ export default function PaymentForm({
   };
 
   return (
-    <div className="p-6">
+    <div className="px-4 pt-2 pb-4">
       <form onSubmit={handleSubmit} className="space-y-8">
         {errorMessage && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -185,6 +188,32 @@ export default function PaymentForm({
             required
             disabled={isLoadingVendors}
           />
+          
+          <FormInput
+            label="Invoice #"
+            id="invoice-number"
+            value={invoiceNumber}
+            onChange={(e) => setInvoiceNumber(e.target.value)}
+            placeholder="Add number"
+          />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <FormDateInput
+              label="Invoice date"
+              id="invoice-date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+              placeholder="Select date"
+            />
+            
+            <FormDateInput
+              label="Due date"
+              id="due-date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              placeholder="Select date"
+            />
+          </div>
         </FormSection>
         
         <FormSection title="Payment">
@@ -310,6 +339,7 @@ export default function PaymentForm({
             type: "submit",
             disabled: !isFormComplete
           }}
+          align="right"
           className="pt-4"
         />
       </form>

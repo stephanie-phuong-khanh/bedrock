@@ -236,8 +236,7 @@ export default function PaymentFlow({
       setPaymentSuccess(true);
       setShowCompleted(true);
       
-      // Notify parent component of successful payment
-      onPaymentSuccess?.();
+      // Don't call onPaymentSuccess here - let user see CompletedPayment first
     } catch (error: unknown) {
       console.error('Payment failed:', error);
       
@@ -279,6 +278,10 @@ export default function PaymentFlow({
   };
 
   const handleClose = () => {
+    // If payment was completed successfully, notify parent before closing
+    if (showCompleted && paymentSuccess) {
+      onPaymentSuccess?.();
+    }
     onClose();
   };
 
@@ -350,7 +353,6 @@ export default function PaymentFlow({
               fiatCurrency={paymentData.fiatCurrency}
               cryptoAsset={paymentData.cryptoAsset}
               cryptoAmount={paymentData.cryptoAmount}
-              fxRate={paymentData.fxRate}
               walletAddress={paymentData.walletAddress}
               network={paymentData.network}
               txHash={txHash}

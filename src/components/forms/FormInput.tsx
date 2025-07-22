@@ -3,6 +3,7 @@
 interface FormInputProps {
   label: string;
   id: string;
+  name?: string;
   type?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -17,6 +18,7 @@ interface FormInputProps {
 export default function FormInput({
   label,
   id,
+  name,
   type = 'text',
   value,
   onChange,
@@ -35,6 +37,7 @@ export default function FormInput({
       <input
         type={type}
         id={id}
+        name={name || id}
         value={value}
         onChange={onChange}
         onBlur={onBlur}

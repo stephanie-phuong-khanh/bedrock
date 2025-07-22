@@ -2,6 +2,8 @@
 
 import { Vendor } from '@/types/supabase';
 import { getBlockExplorerUrl, getNetwork } from '../../constants/crypto';
+import { FormSection, FormInput } from '../forms';
+import Button from '../dashboard/Button';
 
 interface CompletedPaymentProps {
   selectedVendor: Vendor | null;
@@ -9,7 +11,6 @@ interface CompletedPaymentProps {
   fiatCurrency: string;
   cryptoAsset: string;
   cryptoAmount: string;
-  fxRate: number;
   walletAddress: string;
   network: string;
   txHash: string;
@@ -22,7 +23,6 @@ export default function CompletedPayment({
   fiatCurrency,
   cryptoAsset,
   cryptoAmount,
-  fxRate,
   walletAddress,
   network,
   txHash,
@@ -32,7 +32,7 @@ export default function CompletedPayment({
   const networkInfo = getNetwork(network);
 
   return (
-    <div className="space-y-8">
+    <div className="px-4 pt-2 pb-4 space-y-8">
       {/* Success Header */}
       <div className="text-center space-y-4">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
@@ -41,73 +41,98 @@ export default function CompletedPayment({
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Payment Complete!</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Payment complete!</h2>
           <p className="text-gray-600 mt-2">Your payment has been successfully processed</p>
         </div>
       </div>
 
-      {/* Transaction Details */}
-      <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction Details</h3>
-        
-        <div className="grid grid-cols-1 gap-4">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Fiat Amount:</span>
-            <span className="font-medium">{fiatAmount} {fiatCurrency}</span>
-          </div>
+      {/* Payment Details as Form-like Display */}
+      <FormSection title="Paid to">
+        <FormInput
+          label="Vendor"
+          id="vendor"
+          value={selectedVendor?.name || 'Unknown'}
+          onChange={() => {}} // No-op for read-only
+          disabled
+        />
+      </FormSection>
 
-          <div className="flex justify-between">
-            <span className="text-gray-600">Crypto Amount:</span>
-            <span className="font-medium">{cryptoAmount} {cryptoAsset} (exchange rate: {fxRate})</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-gray-600">Vendor:</span>
-            <span className="font-medium">{selectedVendor?.name || 'Unknown'}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-gray-600">Wallet Address:</span>
-            <span className="font-mono text-sm break-all">{walletAddress}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-gray-600">Network:</span>
-            <span className="font-medium">{networkInfo?.name || network}</span>
-          </div>
-          
-          <div className="flex justify-between">
-            <span className="text-gray-600">Transaction Hash:</span>
-            <span className="font-mono text-sm break-all">{txHash}</span>
-          </div>
+      <FormSection title="Amount">
+        <div className="grid grid-cols-2 gap-4">
+          <FormInput
+            label="Amount"
+            id="amount"
+            value={fiatAmount}
+            onChange={() => {}} // No-op for read-only
+            disabled
+          />
+          <FormInput
+            label="Currency"
+            id="currency"
+            value={fiatCurrency}
+            onChange={() => {}} // No-op for read-only
+            disabled
+          />
         </div>
-      </div>
+      </FormSection>
+
+      <FormSection title="Asset">
+        <div className="grid grid-cols-2 gap-4">
+          <FormInput
+            label="Amount"
+            id="cryptoAmount"
+            value={`${cryptoAmount} ${cryptoAsset}`}
+            onChange={() => {}} // No-op for read-only
+            disabled
+          />
+          <FormInput
+            label="Network"
+            id="network"
+            value={networkInfo?.name || network}
+            onChange={() => {}} // No-op for read-only
+            disabled
+          />
+        </div>
+      </FormSection>
+
+      <FormSection title="Address">
+        <FormInput
+          label="Wallet Address"
+          id="address"
+          value={walletAddress}
+          onChange={() => {}} // No-op for read-only
+          disabled
+          className="font-mono text-sm"
+        />
+      </FormSection>
 
       {/* View Transaction Link */}
       {blockExplorerUrl && (
-        <div className="text-center">
+        <div className="pt-2">
           <a
             href={blockExplorerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-100 transition-colors duration-200 w-full justify-center"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            <span>View transaction</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            View Transaction
           </a>
         </div>
       )}
 
       {/* Action Button */}
-      <div className="flex justify-center">
-        <button
+      <div className="flex justify-center pt-4">
+        <Button
+          variant="secondary"
+          size="md"
           onClick={onClose}
-          className="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+          className="px-8"
         >
           Close
-        </button>
+        </Button>
       </div>
     </div>
   );

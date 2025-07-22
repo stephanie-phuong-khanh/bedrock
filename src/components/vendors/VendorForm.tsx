@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
+import { FormSection, FormInput, FormButtons } from '../forms';
 
 interface VendorFormProps {
   onSuccess?: () => void;
@@ -114,44 +115,42 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
   };
   
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div>
-        <label className="block text-gray-700 mb-2">
-          Vendor Name *
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
+    <div className="px-4 pt-2 pb-4">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <FormSection>
+          <FormInput
+            label="Vendor Name"
+            id="name"
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={(e) => handleChange(e as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>)}
+            required
+            placeholder="Enter vendor name"
+          />
+          
+          <FormInput
+            label="Email Address"
+            id="email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => handleChange(e as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>)}
+            required
+            placeholder="Enter email address"
+          />
+        </FormSection>
+        
+        <FormButtons
+          primaryButton={{
+            label: isSubmitting ? 'Saving...' : (isEditing ? 'Update Vendor' : 'Add Vendor'),
+            type: 'submit',
+            disabled: isSubmitting,
+            loading: isSubmitting
+          }}
+          align="right"
         />
-      </div>
-      
-      <div>
-        <label className="block text-gray-700 mb-2">
-          Email *
-        </label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          className="block w-full px-3 py-2 bg-gray-100 border-0 rounded-none focus:outline-none"
-        />
-      </div>
-      
-      <div className="flex justify-end mt-12">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="px-16 py-2.5 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-sm shadow-sm focus:outline-none disabled:bg-gray-300"
-        >
-          {isSubmitting ? 'Saving...' : 'Save'}
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }

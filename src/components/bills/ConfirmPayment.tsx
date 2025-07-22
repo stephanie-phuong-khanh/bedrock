@@ -4,6 +4,8 @@ import { DynamicEmbeddedWidget, DynamicWidget, useDynamicContext } from '@dynami
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
 import { formatTruncatedAddress, formatStyledAddress } from '@/lib/wallet-utils';
+import { FormSection } from '../forms';
+import Button from '../dashboard/Button';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
@@ -45,7 +47,7 @@ export default function ConfirmPayment({
   const [showWalletModal, setShowWalletModal] = useState(false);
 
   return (
-    <div className="space-y-8 relative">
+    <div className="px-4 pt-2 pb-4 space-y-8 relative">
       {/* Payment Processing Overlay */}
       {isProcessingPayment && (
         <div className="absolute inset-0 bg-white/90 z-50 flex items-center justify-center">
@@ -93,70 +95,73 @@ export default function ConfirmPayment({
         </div>
       )}
 
-      <div>
-        <h3 className="text-2xl font-bold mb-6">Review Payment</h3>
+      <FormSection title="Payment Details">
+        {/* Vendor and Wallet Info */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex justify-between items-center">
+          <div>
+            <p className="font-medium text-gray-900">{selectedVendor?.name || 'Unknown Vendor'}</p>
+            <p className="text-sm text-gray-500">Recipient</p>
+          </div>
+          <div className="text-right">
+            {formatStyledAddress(walletAddress)}
+            <p className="text-gray-500 text-sm">{network}</p>
+          </div>
+        </div>
         
-        <div className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded flex justify-between items-center">
-            <div>
-              <p className="font-medium">{selectedVendor?.name || 'Unknown Vendor'}</p>
-            </div>
-            <div className="text-right">
-              {formatStyledAddress(walletAddress)}
-              <p className="text-gray-500 text-sm">{network}</p>
-            </div>
+        {/* Payment Amounts */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Amount</span>
+            <span className="font-medium text-gray-900">{fiatAmount} {fiatCurrency}</span>
           </div>
-          
-          <div className="bg-gray-50 p-4 rounded space-y-2">
-            <div className="flex justify-between">
-              <p>Fiat Amount:</p>
-              <p className="font-medium">{fiatAmount} {fiatCurrency}</p>
-            </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-700">Asset</span>
+            <span className="font-medium text-gray-900">{cryptoAmount} {cryptoAsset}</span>
           </div>
-
-          <div className="bg-gray-50 p-4 rounded space-y-2">
-            <div className="flex justify-between">
-              <p>Crypto Amount:</p>
-              <p className="font-medium">{cryptoAmount} {cryptoAsset} (exchange rate: {fxRate})</p>
-            </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Exchange Rate</span>
+            <span className="text-gray-500">{fxRate} {fiatCurrency}/{cryptoAsset}</span>
           </div>
         </div>
         
         {memo && (
-          <div>
-            <h4 className="text-lg font-medium mb-2">Memo</h4>
-            <div className="bg-gray-50 p-4 rounded">
-              <p>{memo}</p>
-            </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Memo</h4>
+            <p className="text-gray-900">{memo}</p>
           </div>
         )}
-      </div>
+      </FormSection>
       
-      <div className="flex justify-between pt-6">
-        <button
-          onClick={onBack}
-          disabled={isProcessingPayment}
-          className="px-6 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Back
-        </button>
-
-        {!primaryWallet ? (
+      {!primaryWallet ? (
+        <div className="flex justify-center pt-6">
           <DynamicWidget variant="modal" innerButtonComponent={<>Connect Wallet</>}/>
-        ) : (
+        </div>
+      ) : (
+        <div className="flex justify-between items-center pt-6">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={onBack}
+            disabled={isProcessingPayment}
+          >
+            Back
+          </Button>
+
           <div className="relative">
             <div className="flex">
-              <button
+              <Button
+                variant="primary"
+                size="md"
                 onClick={onConfirm}
                 disabled={isProcessingPayment || paymentSuccess}
-                className="px-6 py-2 bg-black text-white rounded-l hover:bg-gray-800 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-r-none"
               >
                 {paymentSuccess ? 'Payment Complete' : `Pay from ${formatTruncatedAddress(primaryWallet.address)}`}
-              </button>
+              </Button>
               <button
                 onClick={() => setShowWalletDropdown(!showWalletDropdown)}
                 disabled={isProcessingPayment || paymentSuccess}
-                className="px-3 py-2 bg-black text-white rounded-r hover:bg-gray-800 border-l border-gray-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 bg-[var(--color-primary)] text-white rounded-r-lg hover:bg-[var(--color-primary-hover)] border-l border-gray-600 flex items-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
@@ -171,13 +176,13 @@ export default function ConfirmPayment({
             </div>
             
             {showWalletDropdown && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded shadow-lg z-30">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
                 <button
                   onClick={() => {
                     setShowWalletDropdown(false);
                     setShowWalletModal(true);
                   }}
-                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center"
+                  className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 flex items-center rounded-lg"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -195,8 +200,8 @@ export default function ConfirmPayment({
               />
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Dynamic Wallet Modal */}
       {showWalletModal && (

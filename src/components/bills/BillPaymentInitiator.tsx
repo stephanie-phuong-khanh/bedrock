@@ -70,7 +70,7 @@ export default function BillPaymentInitiator({
       </div>
 
       {/* Upload Area */}
-      <div className="px-6 py-4">
+      <div className="px-6 pt-2 pb-4">
         <div
           className={`border rounded-xl py-12 px-8 text-center transition-all duration-200 shadow-md ${
             isDragOver

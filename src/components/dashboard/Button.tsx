@@ -3,7 +3,7 @@
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   className?: string;
@@ -22,7 +22,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantClasses = {
       primary: 'btn-primary focus:ring-primary-500',
-      secondary: 'btn-secondary focus:ring-primary-500'
+      secondary: 'btn-secondary focus:ring-primary-500',
+      danger: 'bg-red-700 hover:bg-red-800 text-white focus:ring-red-500'
     };
 
     const combinedClassName = `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`.trim();

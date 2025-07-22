@@ -100,7 +100,7 @@ export default function SidePanel({
     <>
       {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black/85 z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-neutral-700/50 backdrop-blur-[2px] z-40 transition-all duration-300"
         style={{ 
           position: 'fixed',
           top: 0,
@@ -117,7 +117,8 @@ export default function SidePanel({
       {/* Panel Container */}
       <div 
         ref={panelRef}
-        className={`fixed right-0 top-0 h-full ${WIDTHS[width]} z-50 transform transition-transform duration-300 ease-in-out outline-none ${className}`}
+        className={`fixed right-0 bottom-0 ${WIDTHS[width]} z-50 transform transition-transform duration-300 ease-in-out outline-none ${className}`}
+        style={{ height: 'calc(100vh - 1rem)' }} // Reduced height with 1.5rem space at top
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'panel-title' : undefined}
@@ -125,7 +126,7 @@ export default function SidePanel({
       >
         {layout === 'dual' ? (
           // Dual Panel Layout: Left content + Right content
-          <div className="flex h-full">
+          <div className="flex h-full rounded-tl-2xl overflow-hidden">
             {/* Left Panel, used currently for invoice preview but can be used for other content */}
             <div className="w-1/2 bg-gray-50 border-r border-gray-200">
               {leftContent}
@@ -135,7 +136,7 @@ export default function SidePanel({
             <div className="w-1/2 bg-white flex flex-col">
               {/* Header with title and close button */}
               {(title || showCloseButton) && (
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+                <div className="flex items-center justify-between p-8 border-b border-gray-200 flex-shrink-0">
                   {title && (
                     <h2 id="panel-title" className="text-lg font-semibold text-gray-900">
                       {title}
@@ -163,10 +164,10 @@ export default function SidePanel({
           </div>
         ) : (
           // Single Panel Layout: Just main content
-          <div className="h-full bg-white flex flex-col">
+          <div className="h-full bg-white flex flex-col rounded-tl-2xl">
             {/* Header with title and close button */}
             {(title || showCloseButton) && (
-              <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center justify-between p-8 border-b border-gray-200 flex-shrink-0">
                 {title && (
                   <h2 id="panel-title" className="text-lg font-semibold text-gray-900">
                     {title}

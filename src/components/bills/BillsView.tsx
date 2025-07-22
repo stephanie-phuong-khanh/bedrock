@@ -16,7 +16,7 @@ export default function BillsView() {
   
   // Get initial tab state from URL parameters
   const [activeBillsTab, setActiveBillsTab] = useState(() => {
-    return searchParams.get('tab') || 'drafts';
+    return searchParams.get('tab') || 'paid';
   });
 
   // Pay bill modal state
@@ -28,8 +28,8 @@ export default function BillsView() {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const tabs = [
-    { id: 'drafts', label: 'Drafts' },
-    { id: 'paid', label: 'Paid' }
+    { id: 'paid', label: 'Paid' },
+    { id: 'drafts', label: 'Drafts', disabled: true }
   ];
 
   // Handle tab navigation with URL updates
@@ -174,12 +174,16 @@ export default function BillsView() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => handleTabNavigation(tab.id)}
+              onClick={() => !tab.disabled && handleTabNavigation(tab.id)}
               className={`py-2 px-20 border-b-2 font-medium text-sm transition-colors ${
-                activeBillsTab === tab.id
+                tab.disabled
+                  ? 'border-transparent text-gray-400 cursor-not-allowed'
+                  : activeBillsTab === tab.id
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
+              disabled={tab.disabled}
+              title={tab.disabled ? 'Coming soon' : undefined}
             >
               {tab.label}
             </button>

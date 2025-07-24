@@ -72,7 +72,7 @@ export default function BillPaymentInitiator({
       {/* Upload Area */}
       <div className="px-6 pt-2 pb-4">
         <div
-          className={`border rounded-xl py-12 px-8 text-center transition-all duration-200 shadow-md bg-white ${
+          className={`border rounded-xl py-12 px-8 text-center transition-all duration-200 shadow-md bg-white hover:bg-gray-100 ${
             isDragOver
               ? 'border-blue-400'
               : 'border-gray-200'
@@ -130,7 +130,7 @@ export default function BillPaymentInitiator({
       {/* Pay Without Invoice Option */}
       <button
         onClick={onPayWithoutInvoice}
-        className="flex items-center gap-3 w-full py-1 text-left rounded-xl transition-all duration-200 group"
+        className="flex items-center gap-3 w-full py-1 text-left rounded-xl transition-all duration-200 group hover:bg-gray-100"
       >
         <div className="w-5 h-5 text-gray-600">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

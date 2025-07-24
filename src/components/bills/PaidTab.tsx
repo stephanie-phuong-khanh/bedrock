@@ -68,7 +68,6 @@ export default function PaidTab() {
   return (
     <>
       <BillsTable
-        emptyStateMessage="No paid bills yet"
         emptyStateComponent={emptyStateComponent}
       />
 

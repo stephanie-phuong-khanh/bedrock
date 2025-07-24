@@ -5,6 +5,7 @@ import { isAddress } from 'viem';
 import { Vendor } from '@/types/supabase';
 import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '../../constants/crypto';
 import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, CurrencySelect, NetworkSelect } from '../forms';
+import Button from '../dashboard/Button';
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -14,6 +15,7 @@ interface PaymentFormProps {
   selectedVendor?: Vendor | null;
   onVendorChange?: (vendor: Vendor | null) => void;
   initialFormData?: PaymentFormData | null;
+  onVendorCreated?: (vendor: Vendor) => void;
 }
 
 export interface PaymentFormData {
@@ -39,7 +41,8 @@ export default function PaymentForm({
   onSubmit, 
   selectedVendor: initialSelectedVendor,
   onVendorChange,
-  initialFormData
+  initialFormData,
+  onVendorCreated
 }: PaymentFormProps) {
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
   const [fiatAmount, setFiatAmount] = useState<string>(initialFormData?.fiatAmount || '0');
@@ -49,10 +52,16 @@ export default function PaymentForm({
   const [network, setNetwork] = useState<string>(initialFormData?.network || '');
   const [category, setCategory] = useState<string>(initialFormData?.category || '');
   const [memo, setMemo] = useState<string>(initialFormData?.memo || '');
-  const [invoiceNumber, setInvoiceNumber] = useState<string>('');
-  const [invoiceDate, setInvoiceDate] = useState<string>('');
-  const [dueDate, setDueDate] = useState<string>('');
+  const [invoiceNumber, setInvoiceNumber] = useState<string>(initialFormData?.invoiceNumber || '');
+  const [invoiceDate, setInvoiceDate] = useState<string>(initialFormData?.invoiceDate || '');
+  const [dueDate, setDueDate] = useState<string>(initialFormData?.dueDate || '');
   const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
+
+  // Vendor creation form state
+  const [showVendorForm, setShowVendorForm] = useState<boolean>(false);
+  const [newVendorName, setNewVendorName] = useState<string>('');
+  const [newVendorEmail, setNewVendorEmail] = useState<string>('');
+  const [isCreatingVendor, setIsCreatingVendor] = useState<boolean>(false);
 
   // Initialize wallet address validation if initial data is provided
   useEffect(() => {
@@ -63,10 +72,14 @@ export default function PaymentForm({
 
   // Update selectedVendor when prop changes
   useEffect(() => {
-    if (initialSelectedVendor !== selectedVendor) {
+    // Compare by ID to handle object reference differences
+    const currentId = selectedVendor?.id;
+    const newId = initialSelectedVendor?.id;
+    
+    if (currentId !== newId) {
       setSelectedVendor(initialSelectedVendor || null);
     }
-  }, [initialSelectedVendor]);
+  }, [initialSelectedVendor, selectedVendor]);
 
   // Validate wallet address
   const validateWalletAddress = (address: string) => {
@@ -106,6 +119,62 @@ export default function PaymentForm({
     const vendor = vendors.find(v => v.id === vendorId);
     setSelectedVendor(vendor || null);
     onVendorChange?.(vendor || null);
+  };
+
+  // Handle showing vendor creation form
+  const handleCreateVendorClick = () => {
+    setShowVendorForm(true);
+  };
+
+  // Handle canceling vendor creation
+  const handleCancelVendorCreation = () => {
+    setShowVendorForm(false);
+    setNewVendorName('');
+    setNewVendorEmail('');
+  };
+
+  // Handle creating new vendor
+  const handleCreateVendor = async () => {
+    if (!newVendorName.trim() || !newVendorEmail.trim()) {
+      alert('Please fill in both name and email fields');
+      return;
+    }
+
+    setIsCreatingVendor(true);
+    
+    try {
+      const response = await fetch('/api/vendors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newVendorName.trim(),
+          email: newVendorEmail.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create vendor');
+      }
+
+      const data = await response.json();
+      const newVendor = data; // API returns vendor object directly
+      
+      // Notify parent component to refresh vendors list and handle selection
+      onVendorCreated?.(newVendor);
+      
+      // Reset form state
+      setShowVendorForm(false);
+      setNewVendorName('');
+      setNewVendorEmail('');
+      
+    } catch (error) {
+      console.error('Error creating vendor:', error);
+      alert('Failed to create vendor. Please try again.');
+    } finally {
+      setIsCreatingVendor(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,20 +249,85 @@ export default function PaymentForm({
         )}
         
         <FormSection title="Overview">
-          <FormSelect
-            label="Vendor"
-            id="vendor-select"
-            value={selectedVendor?.id || ''}
-            onChange={handleVendorChange}
-            options={vendors.map(vendor => ({
-              value: vendor.id,
-              label: `${vendor.name}${vendor.email ? ` (${vendor.email})` : ''}`,
-              disabled: false
-            }))}
-            placeholder="Search or add"
-            required
-            disabled={isLoadingVendors}
-          />
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <FormSelect
+                label="Vendor"
+                id="vendor-select"
+                value={selectedVendor?.id || ''}
+                onChange={handleVendorChange}
+                options={vendors.map(vendor => ({
+                  value: vendor.id,
+                  label: `${vendor.name}${vendor.email ? ` (${vendor.email})` : ''}`,
+                  disabled: false
+                }))}
+                placeholder="Select a vendor"
+                required
+                disabled={isLoadingVendors}
+              />
+            </div>
+            <Button
+              variant="primary"
+              size="md"
+              className="py-2.5"
+              type="button"
+              onClick={handleCreateVendorClick}
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add new vendor
+            </Button>
+          </div>
+          
+          {/* Inline vendor creation form */}
+          {showVendorForm && (
+            <div className="mt-4 p-6 border border-gray-200 rounded-lg shadow-sm">
+              <div className="space-y-4">
+                <FormInput
+                  label="Name"
+                  id="vendor-name"
+                  value={newVendorName}
+                  onChange={(e) => setNewVendorName(e.target.value)}
+                  placeholder="Add name"
+                  required
+                />
+                
+                <FormInput
+                  label="Email"
+                  id="vendor-email"
+                  type="email"
+                  value={newVendorEmail}
+                  onChange={(e) => setNewVendorEmail(e.target.value)}
+                  placeholder="Add email"
+                  required
+                />
+                
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                      variant="secondary"
+                      size="md"
+                      type="button"
+                      onClick={handleCancelVendorCreation}
+                      disabled={isCreatingVendor || !newVendorName.trim() || !newVendorEmail.trim()}
+                      className="min-w-[60px] py-2"
+                    >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    type="button"
+                    onClick={handleCreateVendor}
+                    disabled={isCreatingVendor || !newVendorName.trim() || !newVendorEmail.trim()}
+                    className="min-w-[60px] py-2"
+                  >
+                    {isCreatingVendor ? 'Adding...' : 'Add'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           
           <FormInput
             label="Invoice #"

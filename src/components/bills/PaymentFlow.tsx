@@ -59,32 +59,60 @@ export default function PaymentFlow({
     }
   }, [invoice, vendors]);
   
-  // Fetch vendors on component mount
-  useEffect(() => {
-    async function fetchVendors() {
-      try {
-        setIsLoadingVendors(true);
-        
-        // Use the API endpoint instead of direct Supabase access
-        const response = await fetch('/api/vendors', {
-          credentials: 'include', // Include cookies with the request
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to load vendors');
-        }
-        
-        const data = await response.json();
-        setVendors(data.vendors || []);
-      } catch (err: unknown) {
-        console.error('Error fetching vendors:', err);
-        setErrorMessage(err instanceof Error ? err.message : 'Failed to load vendors');
-      } finally {
-        setIsLoadingVendors(false);
+  // Fetch vendors function (reusable)
+  const fetchVendors = async () => {
+    try {
+      setIsLoadingVendors(true);
+      
+      // Use the API endpoint instead of direct Supabase access
+      const response = await fetch('/api/vendors', {
+        credentials: 'include', // Include cookies with the request
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load vendors');
       }
+      
+      const data = await response.json();
+      setVendors(data.vendors || []);
+    } catch (err: unknown) {
+      console.error('Error fetching vendors:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load vendors');
+    } finally {
+      setIsLoadingVendors(false);
+    }
+  };
+
+  // Handle vendor creation - refresh vendors list and select new vendor
+  const handleVendorCreated = async (newVendor: Vendor) => {
+    // Defensive check for undefined newVendor
+    if (!newVendor || !newVendor.id) {
+      return;
     }
     
+    // Refetch vendors to update the dropdown options
+    const response = await fetch('/api/vendors', {
+      credentials: 'include',
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      const refreshedVendors = data.vendors || [];
+      
+      // Update vendors list
+      setVendors(refreshedVendors);
+      
+      // Find and select the newly created vendor from the refreshed list
+      const foundVendor = refreshedVendors.find((v: Vendor) => v.id === newVendor.id);
+      if (foundVendor) {
+        setSelectedVendor(foundVendor);
+      }
+    }
+  };
+  
+  // Fetch vendors on component mount
+  useEffect(() => {
     fetchVendors();
   }, []);
   
@@ -326,6 +354,7 @@ export default function PaymentFlow({
               selectedVendor={selectedVendor}
               onVendorChange={handleVendorChange}
               initialFormData={paymentData}
+              onVendorCreated={handleVendorCreated}
             />
           )}
           

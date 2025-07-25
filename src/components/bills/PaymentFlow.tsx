@@ -16,6 +16,7 @@ import {
   getCryptocurrencyDecimals,
   getNetwork,
 } from '../../constants/crypto';
+import { DynamicWrapper } from '@/components/DynamicWrapper';
 
 interface PaymentFlowProps {
   invoice?: InvoiceWithFileUrl | null;
@@ -330,72 +331,74 @@ export default function PaymentFlow({
   };
 
   return (
-    <SidePanel
-      isOpen={true}
-      onClose={onClose}
-      layout="dual"
-      title={getTitle()}
-      width="full"
-      leftContent={
-        <InvoicePanel 
-          invoice={invoice}
-          onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
-          onDelete={showConfirmation || showCompleted ? undefined : onDelete}
-        />
-      }
-      rightContent={
-        <div className="p-6">
-          {!showConfirmation && !showCompleted && (
-            <PaymentForm
-              vendors={vendors}
-              isLoadingVendors={isLoadingVendors}
-              errorMessage={errorMessage}
-              onSubmit={handleFormSubmit}
-              selectedVendor={selectedVendor}
-              onVendorChange={handleVendorChange}
-              initialFormData={paymentData}
-              onVendorCreated={handleVendorCreated}
-            />
-          )}
-          
-          {showConfirmation && !showCompleted && paymentData && (
-            <ConfirmPayment
-              selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
-              memo={paymentData.memo}
-              category={paymentData.category}
-              invoiceNumber={paymentData.invoiceNumber}
-              invoiceDate={paymentData.invoiceDate}
-              dueDate={paymentData.dueDate}
-              onBack={handleBack}
-              onConfirm={handleConfirmPayment}
-              isProcessingPayment={isProcessingPayment}
-              paymentError={paymentError}
-              paymentSuccess={paymentSuccess}
-              txHash={txHash}
-            />
-          )}
+    <DynamicWrapper>
+      <SidePanel
+        isOpen={true}
+        onClose={onClose}
+        layout="dual"
+        title={getTitle()}
+        width="full"
+        leftContent={
+          <InvoicePanel 
+            invoice={invoice}
+            onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
+            onDelete={showConfirmation || showCompleted ? undefined : onDelete}
+          />
+        }
+        rightContent={
+          <div className="p-6">
+            {!showConfirmation && !showCompleted && (
+              <PaymentForm
+                vendors={vendors}
+                isLoadingVendors={isLoadingVendors}
+                errorMessage={errorMessage}
+                onSubmit={handleFormSubmit}
+                selectedVendor={selectedVendor}
+                onVendorChange={handleVendorChange}
+                initialFormData={paymentData}
+                onVendorCreated={handleVendorCreated}
+              />
+            )}
+            
+            {showConfirmation && !showCompleted && paymentData && (
+              <ConfirmPayment
+                selectedVendor={paymentData.selectedVendor}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                memo={paymentData.memo}
+                category={paymentData.category}
+                invoiceNumber={paymentData.invoiceNumber}
+                invoiceDate={paymentData.invoiceDate}
+                dueDate={paymentData.dueDate}
+                onBack={handleBack}
+                onConfirm={handleConfirmPayment}
+                isProcessingPayment={isProcessingPayment}
+                paymentError={paymentError}
+                paymentSuccess={paymentSuccess}
+                txHash={txHash}
+              />
+            )}
 
-          {showCompleted && paymentData && txHash && (
-            <CompletedPayment
-              selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
-              txHash={txHash}
-              onClose={handleClose}
-            />
-          )}
-        </div>
-      }
-    />
+            {showCompleted && paymentData && txHash && (
+              <CompletedPayment
+                selectedVendor={paymentData.selectedVendor}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                txHash={txHash}
+                onClose={handleClose}
+              />
+            )}
+          </div>
+        }
+      />
+    </DynamicWrapper>
   );
 }

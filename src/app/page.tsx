@@ -5,6 +5,7 @@ import DashboardView from "@/components/dashboard/DashboardView";
 import { useValidatedSession } from "@/hooks/useValidatedSession";
 
 export default function Home() {
+
   const { session, isValidUser, loading } = useValidatedSession();
   
   // Show loading state while checking authentication

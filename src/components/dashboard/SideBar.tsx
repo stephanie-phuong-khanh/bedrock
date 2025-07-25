@@ -1,9 +1,12 @@
 'use client';
 
 import { Session } from 'next-auth';
+import { useState } from 'react';
 import Image from 'next/image';
-import ConnectWalletButton from './ConnectWalletButton';
+import WalletModal from './WalletModal';
 import AccountButton from './AccountButton';
+import { DynamicNav } from '@dynamic-labs/sdk-react-core';
+import Button from './Button';
 
 interface SideBarProps {
   session: Session | null;
@@ -12,6 +15,7 @@ interface SideBarProps {
 }
 
 export default function SideBar({ session, activeItem, onItemChange }: SideBarProps) {
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const sidebarItems = [
     {
@@ -69,13 +73,28 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
 
       {/* Connect Wallet Section */}
       <div className="px-4 pt-4 pb-2">
-        <ConnectWalletButton />
+        <Button
+          variant="primary"
+          size="md"
+          onClick={() => setShowWalletModal(true)}
+          className="w-[180px] whitespace-nowrap overflow-hidden text-ellipsis"
+        >
+          Connect wallet
+        </Button>
       </div>
 
       {/* User Profile Section */}
       <div className="px-4 pt-2 pb-4">
         <AccountButton session={session} />
       </div>
+
+      {/* Wallet Modal */}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={() => setShowWalletModal(false)} 
+      />
+
+      <DynamicNav />
     </div>
   );
 }

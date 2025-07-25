@@ -1,10 +1,11 @@
 'use client';
 
-import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
 import { FormSection } from '../forms';
 import Button from '../dashboard/Button';
+import WalletModal from '../dashboard/WalletModal';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;
@@ -305,24 +306,10 @@ export default function ConfirmPayment({
       </div>
       
       {/* Wallet Modal */}
-      {showWalletModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Manage Wallet</h3>
-              <button
-                onClick={() => setShowWalletModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <DynamicEmbeddedWidget />
-          </div>
-        </div>
-      )}
+      <WalletModal 
+        isOpen={showWalletModal} 
+        onClose={() => setShowWalletModal(false)} 
+      />
     </div>
   );
 }

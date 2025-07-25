@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/crypto';
 import { PaymentWithVendorName } from '@/types/payments';
 import { Invoice } from '@/types/supabase';
-import SidePanel from '../dashboard/SidePanel';
-import InvoicePanel from './InvoicePanel';
-import { FormSection } from '../forms';
-import Button from '../dashboard/Button';
+import SidePanel from '@/components/dashboard/SidePanel';
+import InvoicePanel from '@/components/bills/InvoicePanel';
+import { FormSection } from '@/components/forms';
+import Button from '@/components/dashboard/Button';
 
 interface PaymentDetailsProps {
   payment: PaymentWithVendorName | null;

@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-import BillsTable from './BillsTable';
-import PaymentFlow from './PaymentFlow';
-import BillPaymentInitiator from './BillPaymentInitiator';
+import BillsTable from '@/components/bills/BillsTable';
+import PaymentFlow from '@/components/bills/PaymentFlow';
+import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
 
 export default function PaidTab() {
   // Payment flow state for empty state CTA

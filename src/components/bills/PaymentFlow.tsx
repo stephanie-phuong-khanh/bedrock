@@ -5,17 +5,18 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
 import { InvoiceWithFileUrl, PaymentCreationPayload, Vendor } from '@/types/supabase';
-import InvoicePanel from './InvoicePanel';
-import PaymentForm, { PaymentFormData } from './PaymentForm';
-import ConfirmPayment from './ConfirmPayment';
-import CompletedPayment from './CompletedPayment';
-import SidePanel from '../dashboard/SidePanel';
+import DynamicWrapper from '@/components/DynamicWrapper';
+import InvoicePanel from '@/components/bills/InvoicePanel';
+import PaymentForm, { PaymentFormData } from '@/components/bills/PaymentForm';
+import ConfirmPayment from '@/components/bills/ConfirmPayment';
+import CompletedPayment from '@/components/bills/CompletedPayment';
+import SidePanel from '@/components/dashboard/SidePanel';
 import {
   getTokenContractAddress,
   isCryptocurrencyEnabled,
   getCryptocurrencyDecimals,
   getNetwork,
-} from '../../constants/crypto';
+} from '@/constants/crypto';
 
 interface PaymentFlowProps {
   invoice?: InvoiceWithFileUrl | null;
@@ -330,72 +331,74 @@ export default function PaymentFlow({
   };
 
   return (
-    <SidePanel
-      isOpen={true}
-      onClose={onClose}
-      layout="dual"
-      title={getTitle()}
-      width="full"
-      leftContent={
-        <InvoicePanel 
-          invoice={invoice}
-          onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
-          onDelete={showConfirmation || showCompleted ? undefined : onDelete}
-        />
-      }
-      rightContent={
-        <div className="p-6">
-          {!showConfirmation && !showCompleted && (
-            <PaymentForm
-              vendors={vendors}
-              isLoadingVendors={isLoadingVendors}
-              errorMessage={errorMessage}
-              onSubmit={handleFormSubmit}
-              selectedVendor={selectedVendor}
-              onVendorChange={handleVendorChange}
-              initialFormData={paymentData}
-              onVendorCreated={handleVendorCreated}
-            />
-          )}
-          
-          {showConfirmation && !showCompleted && paymentData && (
-            <ConfirmPayment
-              selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
-              memo={paymentData.memo}
-              category={paymentData.category}
-              invoiceNumber={paymentData.invoiceNumber}
-              invoiceDate={paymentData.invoiceDate}
-              dueDate={paymentData.dueDate}
-              onBack={handleBack}
-              onConfirm={handleConfirmPayment}
-              isProcessingPayment={isProcessingPayment}
-              paymentError={paymentError}
-              paymentSuccess={paymentSuccess}
-              txHash={txHash}
-            />
-          )}
+    <DynamicWrapper>
+      <SidePanel
+        isOpen={true}
+        onClose={onClose}
+        layout="dual"
+        title={getTitle()}
+        width="full"
+        leftContent={
+          <InvoicePanel 
+            invoice={invoice}
+            onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
+            onDelete={showConfirmation || showCompleted ? undefined : onDelete}
+          />
+        }
+        rightContent={
+          <div className="p-6">
+            {!showConfirmation && !showCompleted && (
+              <PaymentForm
+                vendors={vendors}
+                isLoadingVendors={isLoadingVendors}
+                errorMessage={errorMessage}
+                onSubmit={handleFormSubmit}
+                selectedVendor={selectedVendor}
+                onVendorChange={handleVendorChange}
+                initialFormData={paymentData}
+                onVendorCreated={handleVendorCreated}
+              />
+            )}
+            
+            {showConfirmation && !showCompleted && paymentData && (
+              <ConfirmPayment
+                selectedVendor={paymentData.selectedVendor}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                memo={paymentData.memo}
+                category={paymentData.category}
+                invoiceNumber={paymentData.invoiceNumber}
+                invoiceDate={paymentData.invoiceDate}
+                dueDate={paymentData.dueDate}
+                onBack={handleBack}
+                onConfirm={handleConfirmPayment}
+                isProcessingPayment={isProcessingPayment}
+                paymentError={paymentError}
+                paymentSuccess={paymentSuccess}
+                txHash={txHash}
+              />
+            )}
 
-          {showCompleted && paymentData && txHash && (
-            <CompletedPayment
-              selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
-              txHash={txHash}
-              onClose={handleClose}
-            />
-          )}
-        </div>
-      }
-    />
+            {showCompleted && paymentData && txHash && (
+              <CompletedPayment
+                selectedVendor={paymentData.selectedVendor}
+                fiatAmount={paymentData.fiatAmount}
+                fiatCurrency={paymentData.fiatCurrency}
+                cryptoAsset={paymentData.cryptoAsset}
+                cryptoAmount={paymentData.cryptoAmount}
+                walletAddress={paymentData.walletAddress}
+                network={paymentData.network}
+                txHash={txHash}
+                onClose={handleClose}
+              />
+            )}
+          </div>
+        }
+      />
+    </DynamicWrapper>
   );
 }

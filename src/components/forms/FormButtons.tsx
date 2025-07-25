@@ -1,6 +1,6 @@
 'use client';
 
-import Button from '../dashboard/Button';
+import Button from '@/components/dashboard/Button';
 
 interface FormButtonsProps {
   primaryButton: {

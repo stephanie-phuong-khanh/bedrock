@@ -3,8 +3,8 @@
 import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
 import { useState } from 'react';
-import { FormSection } from '../forms';
-import Button from '../dashboard/Button';
+import { FormSection } from '@/components/forms';
+import Button from '@/components/dashboard/Button';
 
 interface ConfirmPaymentProps {
   selectedVendor: Vendor | null;

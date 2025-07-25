@@ -7,8 +7,10 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from './DraftsTab';
 import PaidTab from './PaidTab';
 import BillPaymentInitiator from './BillPaymentInitiator';
-import PaymentFlow from './PaymentFlow';
 import Button from '../dashboard/Button';
+import dynamic from 'next/dynamic';
+
+const PaymentFlow = dynamic(() => import('@/components/bills/PaymentFlow'), { ssr: false });
 
 export default function BillsView() {
   const router = useRouter();

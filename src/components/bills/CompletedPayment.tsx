@@ -1,9 +1,9 @@
 'use client';
 
 import { Vendor } from '@/types/supabase';
-import { getBlockExplorerUrl, getNetwork } from '../../constants/crypto';
-import { FormInput } from '../forms';
-import Button from '../dashboard/Button';
+import { getBlockExplorerUrl, getNetwork } from '@/constants/crypto';
+import { FormInput } from '@/components/forms';
+import Button from '@/components/dashboard/Button';
 
 interface CompletedPaymentProps {
   selectedVendor: Vendor | null;

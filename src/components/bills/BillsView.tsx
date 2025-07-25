@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
-import DraftsTab from './DraftsTab';
-import PaidTab from './PaidTab';
-import BillPaymentInitiator from './BillPaymentInitiator';
-import PaymentFlow from './PaymentFlow';
-import Button from '../dashboard/Button';
+import DraftsTab from '@/components/bills/DraftsTab';
+import PaidTab from '@/components/bills/PaidTab';
+import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
+import Button from '@/components/dashboard/Button';
+import dynamic from 'next/dynamic';
+
+const PaymentFlow = dynamic(() => import('@/components/bills/PaymentFlow'), { ssr: false });
 
 export default function BillsView() {
   const router = useRouter();

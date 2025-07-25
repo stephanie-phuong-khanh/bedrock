@@ -2,7 +2,7 @@
 
 import { Session } from 'next-auth';
 import Image from 'next/image';
-import AccountButton from './AccountButton';
+import AccountButton from '@/components/dashboard/AccountButton';
 
 interface SideBarProps {
   session: Session | null;

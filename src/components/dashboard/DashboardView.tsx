@@ -3,9 +3,9 @@
 import { Session } from 'next-auth';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import SideBar from './SideBar';
-import BillsView from '../bills/BillsView';
-import VendorsView from '../vendors/VendorsView';
+import SideBar from '@/components/dashboard/SideBar';
+import BillsView from '@/components/bills/BillsView';
+import VendorsView from '@/components/vendors/VendorsView';
 
 interface DashboardViewProps {
   session: Session | null;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
-import { FormSection, FormInput, FormButtons } from '../forms';
+import { FormSection, FormInput, FormButtons } from '@/components/forms';
 
 interface VendorFormProps {
   onSuccess?: () => void;

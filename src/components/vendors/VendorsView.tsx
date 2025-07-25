@@ -2,9 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import type { Vendor } from '@/types/supabase';
-import VendorForm from './VendorForm';
-import SidePanel from '../dashboard/SidePanel';
-import Button from '../dashboard/Button';
+import VendorForm from '@/components/vendors/VendorForm';
+import SidePanel from '@/components/dashboard/SidePanel';
+import Button from '@/components/dashboard/Button';
 
 export default function VendorsView() {
   const [vendors, setVendors] = useState<Vendor[]>([]);

@@ -2,8 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
-import PaymentDetails from './PaymentDetails';
-import { getPaymentNetworkNameFromId } from '../../constants/crypto';
+import PaymentDetails from '@/components/bills/PaymentDetails';
+import { getPaymentNetworkNameFromId } from '@/constants/crypto';
 
 interface BillsTableProps {
   emptyStateComponent?: React.ReactNode;

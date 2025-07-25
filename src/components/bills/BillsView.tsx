@@ -4,13 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
+import DynamicWrapper from '@/components/DynamicWrapper';
 import DraftsTab from '@/components/bills/DraftsTab';
 import PaidTab from '@/components/bills/PaidTab';
+import PaymentFlow from '@/components/bills/PaymentFlow';
 import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
 import Button from '@/components/dashboard/Button';
-import dynamic from 'next/dynamic';
-
-const PaymentFlow = dynamic(() => import('@/components/bills/PaymentFlow'), { ssr: false });
 
 export default function BillsView() {
   const router = useRouter();
@@ -138,74 +137,76 @@ export default function BillsView() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header with Pay bill button */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-page-title">Bills</h1>
-        <div className="relative">
-          <Button 
-            ref={buttonRef}
-            size="md"
-            onClick={() => setShowPayBillModal(!showPayBillModal)}
-          >
-            Pay bill
-          </Button>
-          
-          {/* Pay Bill Modal */}
-          {showPayBillModal && (
-            <div 
-              ref={modalRef}
-              className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
+    <DynamicWrapper>
+      <div className="space-y-6">
+        {/* Header with Pay bill button */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-page-title">Bills</h1>
+          <div className="relative">
+            <Button 
+              ref={buttonRef}
+              size="md"
+              onClick={() => setShowPayBillModal(!showPayBillModal)}
             >
-              <div className="p-6">
-                <BillPaymentInitiator
-                  onFileSelect={handleFileUpload}
-                  onPayWithoutInvoice={handlePayWithoutInvoice}
-                />
+              Pay bill
+            </Button>
+            
+            {/* Pay Bill Modal */}
+            {showPayBillModal && (
+              <div 
+                ref={modalRef}
+                className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
+              >
+                <div className="p-6">
+                  <BillPaymentInitiator
+                    onFileSelect={handleFileUpload}
+                    onPayWithoutInvoice={handlePayWithoutInvoice}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-20">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => !tab.disabled && handleTabNavigation(tab.id)}
-              className={`py-2 px-20 border-b-2 font-medium text-sm transition-colors ${
-                tab.disabled
-                  ? 'border-transparent text-gray-400 cursor-not-allowed'
-                  : activeBillsTab === tab.id
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              disabled={tab.disabled}
-              title={tab.disabled ? 'Coming soon' : undefined}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-20">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => !tab.disabled && handleTabNavigation(tab.id)}
+                className={`py-2 px-20 border-b-2 font-medium text-sm transition-colors ${
+                  tab.disabled
+                    ? 'border-transparent text-gray-400 cursor-not-allowed'
+                    : activeBillsTab === tab.id
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+                disabled={tab.disabled}
+                title={tab.disabled ? 'Coming soon' : undefined}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-      {/* Tab Content */}
-      <div>
-        {renderTabContent()}
-      </div>
+        {/* Tab Content */}
+        <div>
+          {renderTabContent()}
+        </div>
 
-      {/* Payment Flow Modal */}
-      {showPaymentFlow && (
-        <PaymentFlow
-          invoice={currentInvoice}
-          onClose={handleClosePaymentFlow}
-          onUploadInvoice={handleFileUpload}
-          onDelete={handleDeleteInvoice}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
-      )}
-    </div>
+        {/* Payment Flow Modal */}
+        {showPaymentFlow && (
+          <PaymentFlow
+            invoice={currentInvoice}
+            onClose={handleClosePaymentFlow}
+            onUploadInvoice={handleFileUpload}
+            onDelete={handleDeleteInvoice}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
+        )}
+      </div>
+    </DynamicWrapper>
   );
 }

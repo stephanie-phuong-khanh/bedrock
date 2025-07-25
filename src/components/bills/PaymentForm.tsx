@@ -309,7 +309,7 @@ export default function PaymentForm({
                       size="md"
                       type="button"
                       onClick={handleCancelVendorCreation}
-                      disabled={isCreatingVendor || !newVendorName.trim() || !newVendorEmail.trim()}
+                      disabled={isCreatingVendor}
                       className="min-w-[60px] py-2"
                     >
                     Cancel

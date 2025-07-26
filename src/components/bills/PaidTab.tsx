@@ -6,7 +6,11 @@ import BillsTable from '@/components/bills/BillsTable';
 import PaymentFlow from '@/components/bills/PaymentFlow';
 import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
 
-export default function PaidTab() {
+interface PaidTabProps {
+  refreshPaidBillsTableTrigger?: number;
+}
+
+export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) {
   // Payment flow state for empty state CTA
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
@@ -69,6 +73,7 @@ export default function PaidTab() {
     <>
       <BillsTable
         emptyStateComponent={emptyStateComponent}
+        refreshTrigger={refreshPaidBillsTableTrigger}
       />
 
       {/* Payment Flow Modal */}

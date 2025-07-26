@@ -49,12 +49,14 @@ export default function ConfirmPayment({
 }: ConfirmPaymentProps) {
   const { primaryWallet } = useDynamicContext();
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletModalWasOpenedByConnectButton, setWalletModalWasOpenedByConnectButton] = useState(false);
 
   useEffect(() => {
-    if (primaryWallet !== null) {
+    if (walletModalWasOpenedByConnectButton && primaryWallet !== null) {
       setShowWalletModal(false);
+      setWalletModalWasOpenedByConnectButton(false); // reset
     }
-  }, [primaryWallet]);
+  }, [primaryWallet, walletModalWasOpenedByConnectButton]);
 
   return (
     <div className="px-4 pt-2 pb-4 space-y-8 relative">
@@ -292,7 +294,10 @@ export default function ConfirmPayment({
           <Button
             variant="primary"
             size="md"
-            onClick={() => setShowWalletModal(true)}
+            onClick={() => {
+              setShowWalletModal(true);
+              setWalletModalWasOpenedByConnectButton(true);
+            }}
             className="w-[180px] whitespace-nowrap overflow-hidden text-ellipsis"
           >
             Connect wallet

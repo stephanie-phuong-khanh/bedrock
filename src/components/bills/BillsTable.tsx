@@ -8,11 +8,13 @@ import { getPaymentNetworkNameFromId } from '@/constants/crypto';
 interface BillsTableProps {
   emptyStateComponent?: React.ReactNode;
   filterPredicate?: (payment: PaymentWithVendorName) => boolean;
+  refreshTrigger?: number;
 }
 
 export default function BillsTable({ 
   emptyStateComponent,
-  filterPredicate 
+  filterPredicate,
+  refreshTrigger
 }: BillsTableProps) {
   const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function BillsTable({
   
   useEffect(() => {
     loadPayments();
-  }, [loadPayments]);
+  }, [loadPayments, refreshTrigger]);
   
   // Format the date in a readable format
   const formatDate = (dateString: string | null) => {

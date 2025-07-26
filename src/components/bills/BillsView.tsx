@@ -6,11 +6,9 @@ import { uploadInvoice } from '@/lib/invoice-utils';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import DraftsTab from '@/components/bills/DraftsTab';
 import PaidTab from '@/components/bills/PaidTab';
+import PaymentFlow from '@/components/bills/PaymentFlow';
 import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
 import Button from '@/components/dashboard/Button';
-import dynamic from 'next/dynamic';
-
-const PaymentFlow = dynamic(() => import('@/components/bills/PaymentFlow'), { ssr: false });
 
 export default function BillsView() {
   const router = useRouter();
@@ -25,6 +23,9 @@ export default function BillsView() {
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+  
+  // Refresh trigger to programmatically reload BillsTable data
+  const [refreshPaidBillsTableTrigger, setRefreshPaidBillsTableTrigger] = useState(0);
   
   const modalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -116,6 +117,9 @@ export default function BillsView() {
     
     // Update local state to match URL
     setActiveBillsTab('paid');
+    
+    // Trigger BillsTable refresh by incrementing the trigger (efficient rerender, not remount)
+    setRefreshPaidBillsTableTrigger(prev => prev + 1);
   };
 
   // Sync state with URL changes
@@ -131,7 +135,7 @@ export default function BillsView() {
       case 'drafts':
         return <DraftsTab />;
       case 'paid':
-        return <PaidTab />;
+        return <PaidTab refreshPaidBillsTableTrigger={refreshPaidBillsTableTrigger} />;
       default:
         return <DraftsTab />;
     }

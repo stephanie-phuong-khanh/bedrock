@@ -2,7 +2,7 @@
 
 import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { Vendor } from '@/types/supabase';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
 
@@ -49,6 +49,14 @@ export default function ConfirmPayment({
 }: ConfirmPaymentProps) {
   const { primaryWallet } = useDynamicContext();
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletModalWasOpenedByConnectButton, setWalletModalWasOpenedByConnectButton] = useState(false);
+
+  useEffect(() => {
+    if (walletModalWasOpenedByConnectButton && primaryWallet !== null) {
+      setShowWalletModal(false);
+      setWalletModalWasOpenedByConnectButton(false); // reset
+    }
+  }, [primaryWallet, walletModalWasOpenedByConnectButton]);
 
   return (
     <div className="px-4 pt-2 pb-4 space-y-8 relative">
@@ -205,7 +213,7 @@ export default function ConfirmPayment({
           </div>
         </div>
         
-        {/* Pay from - Now part of Payment Details section */}
+        {/* Pay from */}
         {primaryWallet && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -286,7 +294,10 @@ export default function ConfirmPayment({
           <Button
             variant="primary"
             size="md"
-            onClick={() => setShowWalletModal(true)}
+            onClick={() => {
+              setShowWalletModal(true);
+              setWalletModalWasOpenedByConnectButton(true);
+            }}
             className="w-[180px] whitespace-nowrap overflow-hidden text-ellipsis"
           >
             Connect wallet
@@ -306,19 +317,14 @@ export default function ConfirmPayment({
       
       {/* Wallet Modal */}
       {showWalletModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Manage Wallet</h3>
-              <button
-                onClick={() => setShowWalletModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+        <div 
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          onClick={() => setShowWalletModal(false)}
+        >
+          <div 
+            className="bg-white rounded-lg w-96 max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <DynamicEmbeddedWidget />
           </div>
         </div>

@@ -5,6 +5,7 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 import BillsTable from '@/components/bills/BillsTable';
 import PaymentFlow from '@/components/bills/PaymentFlow';
 import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
+import { uploadInvoice } from '@/lib/invoice-utils';
 
 interface PaidTabProps {
   refreshPaidBillsTableTrigger?: number;
@@ -18,24 +19,9 @@ export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) 
   // Handle file upload from empty state CTA
   const handleFileUpload = async (file: File) => {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload invoice');
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        setCurrentInvoice(data.invoice);
-        setShowPaymentFlow(true);
-      }
+      const invoice = await uploadInvoice(file);
+      setCurrentInvoice(invoice);
+      setShowPaymentFlow(true);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');

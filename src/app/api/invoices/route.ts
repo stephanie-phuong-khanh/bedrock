@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserSupabaseClient, supabaseAdmin } from '@/lib/supabase';
+import { analyzeFromSignedUrl } from '@/lib/ocr';
 
 // POST /api/invoices - Create a new invoice, which uploads the file to Supabase storage
 // and creates a record in the invoices table
@@ -25,13 +26,18 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
 		}
 
+		// Validate file size (5MB limit)
+		if (file.size > 5 * 1024 * 1024) {
+			return NextResponse.json({ error: 'File size exceeds 5MB limit' }, { status: 400 });
+		}
+
 		// Create a unique file name with user ID prefix
 		const filePath = `${userId}/${Date.now()}-${file.name}`;
-		
+
 		// Convert file to buffer for Supabase storage
 		const arrayBuffer = await file.arrayBuffer();
 		const buffer = Buffer.from(arrayBuffer);
-		
+
 		// Upload file to Supabase storage
 		const { error } = await supabaseAdmin.storage
 			.from('invoices')
@@ -77,6 +83,10 @@ export async function POST(request: NextRequest) {
 				{ status: 500 }
 			);
 		}
+
+		// OCR invoice
+		const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
+		console.log('OCR Result: ', ocrResult);
 
 		// Return the complete invoice record with signed URL merged in
 		return NextResponse.json({

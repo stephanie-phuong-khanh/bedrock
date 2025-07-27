@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserSupabaseClient, supabaseAdmin } from '@/lib/supabase';
-import { analyzeFromSignedUrl } from '@/lib/ocr';
+import { analyzeFromSignedUrl } from '@/lib/ocr-textract';
 
 // POST /api/invoices - Create a new invoice, which uploads the file to Supabase storage
 // and creates a record in the invoices table

@@ -1,4 +1,4 @@
-import { TextractClient, AnalyzeDocumentCommand } from "@aws-sdk/client-textract";
+import { TextractClient, AnalyzeExpenseCommand } from "@aws-sdk/client-textract";
 
 const region = process.env.AWS_REGION as string;
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID as string;
@@ -37,9 +37,9 @@ export async function analyzeFromSignedUrl(signedUrl: string) {
 	const buffer = new Uint8Array(arrayBuffer); 
 
 	// Textract's synchronous API
-	const command = new AnalyzeDocumentCommand({
+	// Specifically tuned for receipts and invoices
+	const command = new AnalyzeExpenseCommand({
 		Document: { Bytes: buffer },
-		FeatureTypes: ["FORMS", "TABLES"]
 	}); 
 
 	const result = await textract.send(command);

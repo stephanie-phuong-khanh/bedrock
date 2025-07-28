@@ -38,6 +38,11 @@ NEXT_PUBLIC_DYNAMIC_ENV_ID=your-dynamic-env-id
 
 # This is used to enable Base Sepolia Testnet
 NEXT_PUBLIC_ENVIRONMENT=development
+
+# TODO: Ask for access to the `bedrock-dev` AWS account or for credentials directly
+AWS_ACCESS_KEY_ID=your-aws-access-key-id
+AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+AWS_REGION=your-aws-region
 ```
 
 ### Set up for Base Sepolia Testnet

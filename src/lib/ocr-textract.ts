@@ -69,9 +69,6 @@ export async function analyzeFromSignedUrl(signedUrl: string) {
 		return null;
 	}
 
-	console.log('======= Amazon Textract Result =======');
-	console.dir(result, { depth: null });
-
 	const expenseDocs = result.ExpenseDocuments || [];
 
 	if (!expenseDocs || expenseDocs.length === 0) {

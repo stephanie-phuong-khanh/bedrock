@@ -85,30 +85,37 @@ export async function POST(request: NextRequest) {
 		}
 
 		// OCR invoice
-		// TODO: Move out of this route handler
-		const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
 
-		console.log('Extraction result:', ocrResult); // TODO: Remove after dev
+		// TODO: Keep going if OCR fails
 
-		if (ocrResult) {
-			data.ocr_data = mapOcrToFormData(ocrResult);
-		}
+		try {
+			// TODO: Move out of this route handler
+			const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
 
-		// Write OCR results to the invoice record
-		const { error: updateError } = await supabase
-			.from('invoices')
-			.update({
-				ocr_data: data.ocr_data,
-				invoice_number: data.ocr_data.invoiceNumber,
-			})
+			console.log('Extraction result:', ocrResult); // TODO: Remove after dev
+
+			if (ocrResult) {
+				data.ocr_data = mapOcrToFormData(ocrResult);
+			}
+
+			// Write OCR results to the invoice record
+			const { error: updateError } = await supabase
+				.from('invoices')
+				.update({
+					ocr_data: data.ocr_data,
+					invoice_number: data.ocr_data.invoiceNumber,
+				})
 			.eq('id', data.id);
 
-		if (updateError) {
-			console.error('Error updating invoice record:', updateError);
-			return NextResponse.json(
-				{ error: 'Failed to update invoice record: ' + updateError.message },
-				{ status: 500 }
-			);
+			if (updateError) {
+				console.error('Error updating invoice record:', updateError);
+				return NextResponse.json(
+					{ error: 'Failed to update invoice record: ' + updateError.message },
+					{ status: 500 }
+				);
+			}
+		} catch (error) {
+			console.error('Error OCRing invoice:', error);
 		}
 
 		// Return the complete invoice record with signed URL merged in

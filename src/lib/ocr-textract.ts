@@ -44,7 +44,8 @@ export async function analyzeFromSignedUrl(signedUrl: string) {
 
 	const result = await textract.send(command);
 
-	console.log('Amazon Textract Result: ', result);
+	console.log('======= Amazon Textract Result =======');
+	console.dir(result, { depth: null });
 
 	return result;
 }

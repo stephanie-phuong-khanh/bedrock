@@ -85,8 +85,8 @@ export async function POST(request: NextRequest) {
 		}
 
 		// OCR invoice
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
-		console.log('OCR Result: ', ocrResult);
 
 		// Return the complete invoice record with signed URL merged in
 		return NextResponse.json({

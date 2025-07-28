@@ -80,6 +80,7 @@ export default function BillPaymentInitiator({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          onClick={handleBrowseClick}
         >
           {/* Upload Icon */}
           <div className="mb-3">
@@ -102,13 +103,7 @@ export default function BillPaymentInitiator({
           {/* Upload Text */}
           <div className="space-y-1">
             <p className="text-sm text-gray-600">
-              Drop invoice or{' '}
-              <button
-                onClick={handleBrowseClick}
-                className="font-normal text-primary-600"
-              >
-                browse files
-              </button>
+              Drop invoice or{' '} browse files
             </p>
             <p className="text-xs text-gray-500">PDF files only</p>
           </div>

@@ -170,7 +170,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
               {isUploading ? (
                 <div className="flex flex-col items-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-                  <p className="text-gray-600">Uploading...</p>
+                  <p className="text-gray-600">Uploading and analyzing...</p>
                 </div>
               ) : (
                 <>

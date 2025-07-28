@@ -12,6 +12,26 @@ const textract = new TextractClient({
 	}
 });
 
+// This is specific to our test samples of a US invoice and an EU invoice. This is not truly locale-aware.
+function normalizeAmountLocaleAware(raw: string): string {
+  // Remove currency symbols and whitespace
+  let cleaned = raw.replace(/[^\d.,]/g, '').replace(/\s/g, '');
+
+  // Heuristic: if comma comes after dot, assume US; if dot comes after comma, assume EU
+  const commaIndex = cleaned.lastIndexOf(',');
+  const dotIndex = cleaned.lastIndexOf('.');
+
+  if (commaIndex > dotIndex) {
+    // European format: "10 000,00" → "10000.00"
+    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+  } else {
+    // US format: "10,000.00" → "10000.00"
+    cleaned = cleaned.replace(/,/g, '');
+  }
+
+  return cleaned;
+}
+
 /**
  * Analyzes a document using Amazon Textract. 
  * 
@@ -44,8 +64,61 @@ export async function analyzeFromSignedUrl(signedUrl: string) {
 
 	const result = await textract.send(command);
 
+	if (!result) {
+		console.error('No result returned from Amazon Textract');
+		return null;
+	}
+
 	console.log('======= Amazon Textract Result =======');
 	console.dir(result, { depth: null });
 
-	return result;
+	const expenseDocs = result.ExpenseDocuments || [];
+
+	if (!expenseDocs || expenseDocs.length === 0) {
+		console.error('No expense documents found in the document');
+		return null;
+	}
+
+	// The ExpenseDocuments array can contain more than one element if the document contains
+	// multiple expense documents, such as multiple receipts in one file.
+	// Here, raise an error if there are multiple expense documents.
+	if (expenseDocs.length > 1) {
+		console.error('Multiple expense documents found in the document');
+		return null;
+	}
+
+	const expenseDoc = expenseDocs[0];
+	const summaryFields = expenseDoc.SummaryFields;
+
+	if (!summaryFields || summaryFields.length === 0) {
+		console.error('No summary fields found in the document');
+		return null;
+	}
+
+	// TODO: Map target fields to position in Textract result, to avoid hardcoding edge cases like currency
+	const targetFields = {
+		INVOICE_NUMBER: 'INVOICE_RECEIPT_ID',
+		INVOICE_DATE: 'INVOICE_RECEIPT_DATE',
+		DUE_DATE: 'DUE_DATE',
+		AMOUNT: 'TOTAL', // $ 2 000.00
+		// Currency is a special case because it's part of TOTAL field value but as Currency.Code
+		CURRENCY: 'TOTAL', // USD
+	}
+
+	const targetFieldValues = Object.entries(targetFields).reduce((acc, [key, value]) => {
+		const fieldValues = summaryFields.find((summaryField) => summaryField.Type?.Text === value);
+		if (key === 'CURRENCY') {
+			acc[key] = fieldValues?.Currency?.Code || null;
+			return acc;
+		}
+		acc[key] = fieldValues?.ValueDetection?.Text || null;
+		return acc;
+	}, {} as Record<string, string | null>);
+
+	// Parse amount into a string without currency symbol
+	if (targetFieldValues.AMOUNT) {
+		targetFieldValues.AMOUNT = normalizeAmountLocaleAware(targetFieldValues.AMOUNT);
+	}
+
+	return targetFieldValues;
 }

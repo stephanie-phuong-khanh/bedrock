@@ -11,6 +11,8 @@
     "clean": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.850.0",
+    "@aws-sdk/client-textract": "^3.848.0",
     "@dynamic-labs/ethereum": "^4.22.6",
     "@dynamic-labs/sdk-react-core": "^4.22.6",
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -37,5 +39,6 @@
     "supabase": "^2.30.4",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "types": "module"
 }

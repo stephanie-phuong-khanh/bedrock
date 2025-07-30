@@ -115,6 +115,39 @@ export default function PaymentFlow({
   useEffect(() => {
     fetchVendors();
   }, []);
+
+  // Handle invoice upload and populate payment form from OCR results
+  useEffect(() => {
+    if (invoice && invoice.ocr_data) {
+      const ocr = invoice.ocr_data as Partial<PaymentFormData>;
+      setPaymentData(prev => {
+        // Use previous data or sensible defaults if prev is null
+        const base: PaymentFormData = prev || {
+          selectedVendor: null,
+          fiatAmount: '',
+          fiatCurrency: '',
+          cryptoAsset: '',
+          cryptoAmount: '',
+          fxRate: 0, // TODO: Revisit this
+          walletAddress: '',
+          network: '',
+          category: '',
+          memo: '',
+          invoiceNumber: '',
+          invoiceDate: '',
+          dueDate: '',
+        };
+        // Only overwrite fields present in OCR
+        return {
+          ...base,
+          ...Object.fromEntries(
+            Object.entries(ocr).filter(([, v]) => v !== undefined && v !== null)
+          ),
+        };
+      });
+    }
+  }, [invoice]);
+
   
   const handleFormSubmit = (formData: PaymentFormData) => {
     setPaymentData(formData);

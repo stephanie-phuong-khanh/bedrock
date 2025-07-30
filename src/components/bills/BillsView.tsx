@@ -161,7 +161,7 @@ export default function BillsView() {
               ref={modalRef}
               className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
             >
-              <div className="p-6">
+              <div>
                 <BillPaymentInitiator
                   onFileSelect={handleFileUpload}
                   onPayWithoutInvoice={handlePayWithoutInvoice}

@@ -99,7 +99,7 @@ export default function BillsTable({
                 Upload an invoice to get started
               </h2>
             </div>
-            <div className="border border-gray-200 rounded-lg p-6 mb-6 bg-gray-50">
+            <div className="border border-gray-200 rounded-lg mb-6 bg-gray-50">
               {emptyStateComponent}
             </div>
           </div>

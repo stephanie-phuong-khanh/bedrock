@@ -244,12 +244,14 @@ export default function PaymentFlow({
       console.log('Transaction sent, hash:', hash);
 
       // Wait for confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      console.log('Transaction confirmed:', receipt);
+      // TODO: Revisit why waitForTransactionReceipt gives transient BlockNotFound error. Testing on Base Sepolia.
+      const receipt = await publicClient.getTransactionReceipt({ hash });
+      console.log('Transaction receipt:', receipt);
 
       // Get block timestamp
       const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
       const confirmedAt = new Date(Number(block.timestamp) * 1000);
+      console.log('Block timestamp:', confirmedAt);
 
       // Validate amount conversions
       const fiatAmountNum = parseFloat(paymentData.fiatAmount);

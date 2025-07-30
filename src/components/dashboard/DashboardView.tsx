@@ -1,17 +1,12 @@
 'use client';
 
-import { Session } from 'next-auth';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SideBar from '@/components/dashboard/SideBar';
 import BillsView from '@/components/bills/BillsView';
 import VendorsView from '@/components/vendors/VendorsView';
 
-interface DashboardViewProps {
-  session: Session | null;
-}
-
-export default function DashboardView({ session }: DashboardViewProps) {
+export default function DashboardView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -78,7 +73,6 @@ export default function DashboardView({ session }: DashboardViewProps) {
       <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
         <SideBar 
-          session={session}
           activeItem={activeSidebarItem}
           onItemChange={handleSidebarNavigation}
         />

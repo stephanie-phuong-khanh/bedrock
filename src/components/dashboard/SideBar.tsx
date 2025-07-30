@@ -1,16 +1,14 @@
 'use client';
 
-import { Session } from 'next-auth';
 import Image from 'next/image';
 import AccountButton from '@/components/dashboard/AccountButton';
 
 interface SideBarProps {
-  session: Session | null;
   activeItem: string;
   onItemChange: (item: string) => void;
 }
 
-export default function SideBar({ session, activeItem, onItemChange }: SideBarProps) {
+export default function SideBar({ activeItem, onItemChange }: SideBarProps) {
 
   const sidebarItems = [
     {
@@ -68,7 +66,7 @@ export default function SideBar({ session, activeItem, onItemChange }: SideBarPr
 
       {/* User Profile Section */}
       <div className="px-4 pt-2 pb-4">
-        <AccountButton session={session} />
+        <AccountButton />
       </div>
     </div>
   );

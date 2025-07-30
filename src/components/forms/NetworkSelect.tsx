@@ -5,7 +5,6 @@ interface NetworkOption {
   name: string;
   chainId: number;
   icon?: React.ReactNode;
-  isEnabled?: boolean;
 }
 
 interface NetworkSelectProps {
@@ -16,7 +15,6 @@ interface NetworkSelectProps {
   options: NetworkOption[];
   placeholder?: string;
   required?: boolean;
-  disabled?: boolean;
   error?: string;
   className?: string;
 }
@@ -29,7 +27,6 @@ export default function NetworkSelect({
   options,
   placeholder = 'Select',
   required = false,
-  disabled = false,
   error,
   className = ''
 }: NetworkSelectProps) {
@@ -43,11 +40,9 @@ export default function NetworkSelect({
         value={value}
         onChange={onChange}
         required={required}
-        disabled={disabled}
         className={`
           w-full px-3 py-2.5 border rounded-lg bg-white
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-          disabled:bg-gray-50 disabled:text-gray-500
           ${error 
             ? 'border-red-300 focus:ring-red-500' 
             : 'border-gray-300 hover:border-gray-400'
@@ -62,7 +57,6 @@ export default function NetworkSelect({
           <option 
             key={option.id} 
             value={option.id}
-            disabled={option.isEnabled === false}
           >
             {option.name}
           </option>

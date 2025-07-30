@@ -6,6 +6,7 @@ import { Vendor } from '@/types/supabase';
 import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '@/constants/crypto';
 import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, CurrencySelect, NetworkSelect } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
+import { useUserSession } from "@/context/UserSessionContext";
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -44,6 +45,7 @@ export default function PaymentForm({
   initialFormData,
   onVendorCreated
 }: PaymentFormProps) {
+  const { session } = useUserSession();
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
   const [fiatAmount, setFiatAmount] = useState<string>(initialFormData?.fiatAmount || '0');
   const [fiatCurrency, setFiatCurrency] = useState<string>(initialFormData?.fiatCurrency || '');
@@ -446,11 +448,10 @@ export default function PaymentForm({
               id="network"
               value={network}
               onChange={(e) => setNetwork(e.target.value)}
-              options={getEnabledNetworks().map(network => ({
+              options={getEnabledNetworks(session?.user?.email ? { email: session.user.email } : undefined).map(network => ({
                 id: network.id,
                 name: network.name,
                 chainId: network.chainId,
-                isEnabled: network.isEnabled
               }))}
               placeholder="Select"
               required

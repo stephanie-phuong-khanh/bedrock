@@ -2,10 +2,10 @@
 
 import LoginView from "@/components/dashboard/LoginView";
 import DashboardView from "@/components/dashboard/DashboardView";
-import { useValidatedSession } from "@/hooks/useValidatedSession";
+import { useUserSession } from "@/context/UserSessionContext";
 
 export default function Home() {
-  const { session, isValidUser, loading } = useValidatedSession();
+  const { session, isValidUser, loading } = useUserSession();
   
   // Show loading state while checking authentication
   if (loading) {
@@ -25,7 +25,7 @@ export default function Home() {
   
   // If authenticated and user is valid, show dashboard
   if (session && isValidUser) {
-    return <DashboardView session={session} />;
+    return <DashboardView />;
   }
   
   // If not authenticated or user is invalid, show login page

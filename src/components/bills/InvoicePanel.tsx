@@ -183,7 +183,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
                     <span className="text-gray-800">Drop invoice or </span>
                     <span className="text-primary-600">browse files</span>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium">PDF files up to 5MB only</p>
+                  <p className="text-sm text-gray-500 font-medium">PDF files only</p>
                   
                   {uploadError && (
                     <p className="mt-4 text-red-500 text-sm">{uploadError}</p>

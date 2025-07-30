@@ -23,6 +23,7 @@ interface PaymentFlowProps {
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
   onPaymentSuccess?: () => void;
+  initiallyUploadingInvoice?: boolean;
 }
 
 export default function PaymentFlow({
@@ -30,7 +31,8 @@ export default function PaymentFlow({
   onClose,
   onUploadInvoice,
   onDelete,
-  onPaymentSuccess
+  onPaymentSuccess,
+  initiallyUploadingInvoice
 }: PaymentFlowProps) {
   const { primaryWallet } = useDynamicContext();
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -242,12 +244,14 @@ export default function PaymentFlow({
       console.log('Transaction sent, hash:', hash);
 
       // Wait for confirmation
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      console.log('Transaction confirmed:', receipt);
+      // TODO: Revisit why waitForTransactionReceipt gives transient BlockNotFound error. Testing on Base Sepolia.
+      const receipt = await publicClient.getTransactionReceipt({ hash });
+      console.log('Transaction receipt:', receipt);
 
       // Get block timestamp
       const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
       const confirmedAt = new Date(Number(block.timestamp) * 1000);
+      console.log('Block timestamp:', confirmedAt);
 
       // Validate amount conversions
       const fiatAmountNum = parseFloat(paymentData.fiatAmount);
@@ -383,7 +387,8 @@ export default function PaymentFlow({
       width={showInvoicePanel ? "full" : "half"}
       leftContent={showInvoicePanel ? (
         <InvoicePanel 
-          invoice={invoice}
+          invoice={invoice} 
+          isUploading={initiallyUploadingInvoice}
           onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
           onDelete={showConfirmation || showCompleted ? undefined : onDelete}
         />

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { InvoiceWithFileUrl } from '@/types/supabase';
 import BillsTable from '@/components/bills/BillsTable';
 import PaymentFlow from '@/components/bills/PaymentFlow';
@@ -9,38 +8,49 @@ import { uploadInvoice } from '@/lib/invoice-utils';
 
 interface PaidTabProps {
   refreshPaidBillsTableTrigger?: number;
+  showPaymentFlow: boolean;
+  setShowPaymentFlow: (show: boolean) => void;
+  currentInvoice: InvoiceWithFileUrl | null;
+  setCurrentInvoice: (invoice: InvoiceWithFileUrl | null) => void;
+  initiallyUploadingInvoice: boolean;
+  setInitiallyUploadingInvoice: (show: boolean) => void;
+  onClosePaymentFlow: () => void;
+  onDelete?: (invoiceId: string) => Promise<void>;
 }
 
-export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) {
-  // Payment flow state for empty state CTA
-  const [showPaymentFlow, setShowPaymentFlow] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
-
-  // Handle file upload from empty state CTA
+export default function PaidTab({
+  refreshPaidBillsTableTrigger,
+  showPaymentFlow,
+  setShowPaymentFlow,
+  currentInvoice,
+  setCurrentInvoice,
+  initiallyUploadingInvoice,
+  setInitiallyUploadingInvoice,
+  onClosePaymentFlow,
+  onDelete,
+}: PaidTabProps) {
+  // Handle file upload from BillPaymentInitiator is different from handleFileUpload in BillsView
   const handleFileUpload = async (file: File) => {
     try {
+      setShowPaymentFlow(true);
+      setInitiallyUploadingInvoice(true);
+
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
-      setShowPaymentFlow(true);
+      setInitiallyUploadingInvoice(false);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
     }
   };
 
-  // Handle pay without invoice
+  // Handle pay without invoice from empty state CTA is different from handlePayWithoutInvoice in BillsView
   const handlePayWithoutInvoice = () => {
     setCurrentInvoice(null);
     setShowPaymentFlow(true);
   };
 
-  // Handle payment flow close
-  const handlePaymentFlowClose = () => {
-    setShowPaymentFlow(false);
-    setCurrentInvoice(null);
-  };
-
-  // Handle payment success
+  // Handle payment success 
   const handlePaymentSuccess = () => {
     setShowPaymentFlow(false);
     setCurrentInvoice(null);
@@ -66,8 +76,11 @@ export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) 
       {showPaymentFlow && (
         <PaymentFlow
           invoice={currentInvoice}
-          onClose={handlePaymentFlowClose}
+          onClose={onClosePaymentFlow}
+          onUploadInvoice={handleFileUpload}
+          onDelete={onDelete}
           onPaymentSuccess={handlePaymentSuccess}
+          initiallyUploadingInvoice={initiallyUploadingInvoice}
         />
       )}
     </>

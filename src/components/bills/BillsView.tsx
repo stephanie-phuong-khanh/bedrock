@@ -20,9 +20,10 @@ export default function BillsView() {
   });
 
   // Pay bill modal state
-  const [showPayBillModal, setShowPayBillModal] = useState(false);
+  const [showBillPaymentInitiatorModal, setShowBillPaymentInitiatorModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+  const [initiallyUploadingInvoice, setInitiallyUploadingInvoice] = useState(false);
   
   // Refresh trigger to programmatically reload BillsTable data
   const [refreshPaidBillsTableTrigger, setRefreshPaidBillsTableTrigger] = useState(0);
@@ -51,23 +52,26 @@ export default function BillsView() {
     function handleClickOutside(event: MouseEvent) {
       if (modalRef.current && !modalRef.current.contains(event.target as Node) && 
           buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        setShowPayBillModal(false);
+        setShowBillPaymentInitiatorModal(false);
       }
     }
-    
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // Handle file upload from InvoiceUpload component
+  // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
+      setShowBillPaymentInitiatorModal(false);
+      setInitiallyUploadingInvoice(true);
+      setShowPaymentFlow(true);
+
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
-      setShowPayBillModal(false);
-      setShowPaymentFlow(true);
+      setInitiallyUploadingInvoice(false);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
@@ -98,7 +102,7 @@ export default function BillsView() {
   const handlePayWithoutInvoice = () => {
     setCurrentInvoice(null);
     setShowPaymentFlow(true);
-    setShowPayBillModal(false);
+    setShowBillPaymentInitiatorModal(false);
   };
 
   const handleClosePaymentFlow = () => {
@@ -135,7 +139,17 @@ export default function BillsView() {
       case 'drafts':
         return <DraftsTab />;
       case 'paid':
-        return <PaidTab refreshPaidBillsTableTrigger={refreshPaidBillsTableTrigger} />;
+        return <PaidTab
+          refreshPaidBillsTableTrigger={refreshPaidBillsTableTrigger}
+          showPaymentFlow={showPaymentFlow}
+          setShowPaymentFlow={setShowPaymentFlow}
+          currentInvoice={currentInvoice}
+          setCurrentInvoice={setCurrentInvoice}
+          initiallyUploadingInvoice={initiallyUploadingInvoice}
+          setInitiallyUploadingInvoice={setInitiallyUploadingInvoice}
+          onClosePaymentFlow={handleClosePaymentFlow}
+          onDelete={handleDeleteInvoice}
+        />;
       default:
         return <DraftsTab />;
     }
@@ -150,13 +164,13 @@ export default function BillsView() {
           <Button 
             ref={buttonRef}
             size="md"
-            onClick={() => setShowPayBillModal(!showPayBillModal)}
+            onClick={() => setShowBillPaymentInitiatorModal(!showBillPaymentInitiatorModal)}
           >
             Pay bill
           </Button>
           
-          {/* Pay Bill Modal */}
-          {showPayBillModal && (
+          {/* Bill Payment Initiator Modal */}
+          {showBillPaymentInitiatorModal && (
             <div 
               ref={modalRef}
               className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 w-[450px]"
@@ -208,6 +222,7 @@ export default function BillsView() {
           onUploadInvoice={handleFileUpload}
           onDelete={handleDeleteInvoice}
           onPaymentSuccess={handlePaymentSuccess}
+          initiallyUploadingInvoice={initiallyUploadingInvoice}
         />
       )}
     </div>

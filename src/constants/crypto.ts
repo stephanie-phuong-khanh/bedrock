@@ -155,6 +155,11 @@ export const TOKEN_CONTRACTS: Record<string, TokenContracts> = {
   },
 };
 
+const WHITELISTED_TESTNET_EMAILS = [
+  'echulshin8@gmail.com',
+  'stephaniekdoan@gmail.com'
+];
+
 // Helper functions
 export function getEnabledFiatCurrencies(): FiatCurrency[] {
   return Object.values(FIAT_CURRENCIES).filter(fiat => fiat.isEnabled);
@@ -164,8 +169,8 @@ export function getEnabledCryptocurrencies(): CryptoCurrency[] {
   return Object.values(CRYPTOCURRENCIES).filter(crypto => crypto.isEnabled);
 }
 
-export function getEnabledNetworks(): Network[] {
-  return Object.values(NETWORKS).filter(network => network.isEnabled);
+export function getEnabledNetworks(user?: { email?: string }): Network[] {
+  return Object.values(NETWORKS).filter(network => network.isEnabled || (WHITELISTED_TESTNET_EMAILS.includes(user?.email || '') && network.id === 'base-sepolia'));
 }
 
 export function getBlockExplorerUrl(network: string, txHash: string): string {

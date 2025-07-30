@@ -1,15 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Session } from 'next-auth';
 import { signOut } from "next-auth/react";
 import Image from 'next/image';
+import { useUserSession } from '@/context/UserSessionContext';
 
-interface AccountButtonProps {
-  session: Session | null;
-}
-
-export default function AccountButton({ session }: AccountButtonProps) {
+export default function AccountButton() {
+  const { session } = useUserSession();
   const [showModal, setShowModal] = useState(false);
 
   const handleSignOut = async () => {

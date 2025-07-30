@@ -5,11 +5,13 @@ import { useState, useRef, DragEvent } from 'react';
 interface BillPaymentInitiatorProps {
   onFileSelect: (file: File) => void;
   onPayWithoutInvoice: () => void;
+  isLoading?: boolean;
 }
 
 export default function BillPaymentInitiator({ 
   onFileSelect, 
-  onPayWithoutInvoice, 
+  onPayWithoutInvoice,
+  isLoading = false,
 }: BillPaymentInitiatorProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +56,17 @@ export default function BillPaymentInitiator({
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4 p-6 text-center">
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+          <p className="text-gray-600">Uploading and analyzing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-4'>

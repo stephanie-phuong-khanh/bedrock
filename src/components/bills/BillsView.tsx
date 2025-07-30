@@ -23,6 +23,7 @@ export default function BillsView() {
   const [showPayBillModal, setShowPayBillModal] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   // Refresh trigger to programmatically reload BillsTable data
   const [refreshPaidBillsTableTrigger, setRefreshPaidBillsTableTrigger] = useState(0);
@@ -64,6 +65,7 @@ export default function BillsView() {
   // Handle file upload from InvoiceUpload component
   const handleFileUpload = async (file: File) => {
     try {
+      setIsUploading(true);
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
       setShowPayBillModal(false);
@@ -71,6 +73,8 @@ export default function BillsView() {
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -165,6 +169,7 @@ export default function BillsView() {
                 <BillPaymentInitiator
                   onFileSelect={handleFileUpload}
                   onPayWithoutInvoice={handlePayWithoutInvoice}
+                  isLoading={isUploading}
                 />
               </div>
             </div>

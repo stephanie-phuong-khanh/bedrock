@@ -15,16 +15,20 @@ export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) 
   // Payment flow state for empty state CTA
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Handle file upload from empty state CTA
   const handleFileUpload = async (file: File) => {
     try {
+      setIsUploading(true);
       const invoice = await uploadInvoice(file);
       setCurrentInvoice(invoice);
       setShowPaymentFlow(true);
     } catch (error) {
       console.error('Error uploading invoice:', error);
       alert('Failed to upload invoice. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -52,6 +56,7 @@ export default function PaidTab({ refreshPaidBillsTableTrigger }: PaidTabProps) 
     <BillPaymentInitiator
       onFileSelect={handleFileUpload}
       onPayWithoutInvoice={handlePayWithoutInvoice}
+      isLoading={isUploading}
     />
   );
 

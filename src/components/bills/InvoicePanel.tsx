@@ -5,15 +5,23 @@ import { InvoiceWithFileUrl } from '@/types/supabase';
 
 interface InvoicePanelProps {
   invoice?: InvoiceWithFileUrl | null;
+  isUploading?: boolean;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
 }
 
-export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: InvoicePanelProps) {
+export default function InvoicePanel({
+  invoice,
+  isUploading,
+  onUploadInvoice,
+  onDelete
+}: InvoicePanelProps) {
   const [isPdf, setIsPdf] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const [internalUploading, setInternalUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  
+  const isUploadingEffective = isUploading ?? internalUploading;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -82,7 +90,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
       return;
     }
     
-    setIsUploading(true);
+    setInternalUploading(true);
     setUploadError(null);
     
     try {
@@ -93,7 +101,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
       console.error('Error uploading invoice:', error);
       setUploadError('An unexpected error occurred. Please try again.');
     } finally {
-      setIsUploading(false);
+      setInternalUploading(false);
     }
   };
   
@@ -167,7 +175,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
               className={`border border-gray-200 shadow-lg flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 bg-white aspect-[8.5/11] w-full ${isDragging ? 'border-blue-400 bg-blue-50 shadow-md' : 'hover:border-gray-300 hover:shadow-md'}`}
               onClick={handleBrowseFiles}
             >
-              {isUploading ? (
+              {isUploadingEffective ? (
                 <div className="flex flex-col items-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
                   <p className="text-gray-600">Uploading and analyzing...</p>

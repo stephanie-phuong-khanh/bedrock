@@ -23,6 +23,7 @@ interface PaymentFlowProps {
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
   onPaymentSuccess?: () => void;
+  initiallyUploadingInvoice?: boolean;
 }
 
 export default function PaymentFlow({
@@ -30,7 +31,8 @@ export default function PaymentFlow({
   onClose,
   onUploadInvoice,
   onDelete,
-  onPaymentSuccess
+  onPaymentSuccess,
+  initiallyUploadingInvoice
 }: PaymentFlowProps) {
   const { primaryWallet } = useDynamicContext();
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -383,7 +385,8 @@ export default function PaymentFlow({
       width={showInvoicePanel ? "full" : "half"}
       leftContent={showInvoicePanel ? (
         <InvoicePanel 
-          invoice={invoice}
+          invoice={invoice} 
+          isUploading={initiallyUploadingInvoice}
           onUploadInvoice={showConfirmation || showCompleted ? undefined : onUploadInvoice}
           onDelete={showConfirmation || showCompleted ? undefined : onDelete}
         />

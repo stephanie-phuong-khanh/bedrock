@@ -15,12 +15,9 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   
-
-
   // Determine if the file is a PDF based on file_path
   useEffect(() => {
     if (invoice && invoice.file_path) {
@@ -79,9 +76,9 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
   };
   
   const handleFileUpload = async (file: File) => {
-    // Validate file type
-    if (!file.type.includes('pdf')) {
-      setUploadError('Only PDF files are allowed');
+    // Validate file type and size
+    if (!file.type.includes('pdf') || file.size > 5 * 1024 * 1024) {
+      setUploadError('Only PDF files up to 5MB are allowed');
       return;
     }
     
@@ -173,7 +170,7 @@ export default function InvoicePanel({ invoice, onUploadInvoice, onDelete }: Inv
               {isUploading ? (
                 <div className="flex flex-col items-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-                  <p className="text-gray-600">Uploading...</p>
+                  <p className="text-gray-600">Uploading and analyzing...</p>
                 </div>
               ) : (
                 <>

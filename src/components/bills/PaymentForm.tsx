@@ -81,6 +81,23 @@ export default function PaymentForm({
     }
   }, [initialSelectedVendor, selectedVendor]);
 
+  // Update all state fields when initialFormData changes
+  useEffect(() => {
+    if (initialFormData) {
+      setSelectedVendor(initialFormData.selectedVendor || null);
+      setFiatAmount(initialFormData.fiatAmount || '0');
+      setFiatCurrency(initialFormData.fiatCurrency || '');
+      setCryptoAsset(initialFormData.cryptoAsset || '');
+      setWalletAddress(initialFormData.walletAddress || '');
+      setNetwork(initialFormData.network || '');
+      setCategory(initialFormData.category || '');
+      setMemo(initialFormData.memo || '');
+      setInvoiceNumber(initialFormData.invoiceNumber || '');
+      setInvoiceDate(initialFormData.invoiceDate || '');
+      setDueDate(initialFormData.dueDate || '');
+    }
+  }, [initialFormData]);
+
   // Validate wallet address
   const validateWalletAddress = (address: string) => {
     if (!address) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserSupabaseClient, supabaseAdmin } from '@/lib/supabase';
+import { analyzeFromSignedUrl } from '@/lib/ocr-textract';
 
 // POST /api/invoices - Create a new invoice, which uploads the file to Supabase storage
 // and creates a record in the invoices table
@@ -25,13 +26,18 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: 'Only PDF files are allowed' }, { status: 400 });
 		}
 
+		// Validate file size (5MB limit)
+		if (file.size > 5 * 1024 * 1024) {
+			return NextResponse.json({ error: 'File size exceeds 5MB limit' }, { status: 400 });
+		}
+
 		// Create a unique file name with user ID prefix
 		const filePath = `${userId}/${Date.now()}-${file.name}`;
-		
+
 		// Convert file to buffer for Supabase storage
 		const arrayBuffer = await file.arrayBuffer();
 		const buffer = Buffer.from(arrayBuffer);
-		
+
 		// Upload file to Supabase storage
 		const { error } = await supabaseAdmin.storage
 			.from('invoices')
@@ -78,6 +84,40 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// OCR invoice
+
+		// TODO: Keep going if OCR fails
+
+		try {
+			// TODO: Move out of this route handler
+			const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
+
+			console.log('Extraction result:', ocrResult); // TODO: Remove after dev
+
+			if (ocrResult) {
+				data.ocr_data = mapOcrToFormData(ocrResult);
+			}
+
+			// Write OCR results to the invoice record
+			const { error: updateError } = await supabase
+				.from('invoices')
+				.update({
+					ocr_data: data.ocr_data,
+					invoice_number: data.ocr_data.invoiceNumber,
+				})
+			.eq('id', data.id);
+
+			if (updateError) {
+				console.error('Error updating invoice record:', updateError);
+				return NextResponse.json(
+					{ error: 'Failed to update invoice record: ' + updateError.message },
+					{ status: 500 }
+				);
+			}
+		} catch (error) {
+			console.error('Error OCRing invoice:', error);
+		}
+
 		// Return the complete invoice record with signed URL merged in
 		return NextResponse.json({
 			success: true,
@@ -92,6 +132,18 @@ export async function POST(request: NextRequest) {
 			error: 'Internal server error', 
 			details: error instanceof Error ? error.message : 'Unknown error' 
 		}, { status: 500 });
+	}
+}
+
+
+// TODO: Potentially move into OCR utils
+function mapOcrToFormData(ocrResult: Record<string, string | null>) : Record<string, string | null> {
+	return {
+		invoiceNumber: ocrResult['INVOICE_NUMBER'],
+		invoiceDate: ocrResult['INVOICE_DATE'],
+		dueDate: ocrResult['DUE_DATE'],
+		fiatAmount: ocrResult['AMOUNT'],
+		fiatCurrency: ocrResult['CURRENCY']
 	}
 }
 

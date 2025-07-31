@@ -39,10 +39,10 @@ NEXT_PUBLIC_DYNAMIC_ENV_ID=your-dynamic-env-id
 # This is used to enable Base Sepolia Testnet
 NEXT_PUBLIC_ENVIRONMENT=development
 
-# TODO: Ask for access to the `bedrock-dev` AWS account or for credentials directly
+# Ask for access to the `bedrock-dev` AWS account or for credentials directly
 AWS_ACCESS_KEY_ID=your-aws-access-key-id
 AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
-AWS_REGION=your-aws-region
+AWS_REGION=your-aws-region # This is `us-east-1` for the `bedrock-dev` AWS account
 ```
 
 ### Set up for Base Sepolia Testnet
@@ -76,13 +76,49 @@ npm run start
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+
+## Supabase
+
+Local development uses the `bedrock-dev` Supabase project, instead of a local database instance.
+
+The project ref for `bedrock-dev` is `dotshtajxdbyaficfbwv`.
+The project ref for `bedrock-prod` is `rdmdsrjdgwauxoydvydi`.
+
+### Local Development
+
+```bash
+# Link to Supabase project if not already linked
+npx supabase link --project-ref dotshtajxdbyaficfbwv
+
+# Create a new migration
+npx supabase migration new <migration-name>
+# For example:
+npx supabase migration new add-invoice-status-enum
+
+# Then edit the generated SQL file in supabase/migraions/ and push the local migration to Supabase, dev first to test!
+npx supabase db push
+
+# Generate Supabase types. This connects to the remote Supabase database (here `bedrock-dev`), introspects its schema, and generates Typescript type file that reflects all your current schema.
+npx supabase gen types typescript --project-ref dotshtajxdbyaficfbwv > src/types/supabase-types.ts
+```
+
+### Deployment
+
+```bash
+# Link to Supabase project if not already linked
+npx supabase link --project-ref rdmdsrjdgwauxoydvydi
+
+# Apply all migrations to prod database. Make sure you do this around the time new changes are deployed to Vercel on main (prod), if the changes are dependent on the migrations
+npx supabase db push
+```
+
 ## Deployment
 
 ### Access Requirements
 
 - **Vercel**: Request access to the `bedrock` Vercel project
 - **Supabase**: Request access to the `bedrock-prod` Supabase project
-- **Dynamic**: Request access to the `bedrock` Dynamic project
+- **Dynamic**: Request access to the `bedrock-prod` Dynamic project
 - **Google Cloud**: Request access to the `Bedrock` Google Cloud Project
 
 ### Deployment Process

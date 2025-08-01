@@ -1,7 +1,7 @@
 'use client';
 
 import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { Vendor } from '@/types/supabase';
+import { Vendor } from '@/types/db-types';
 import { useEffect, useState } from 'react';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Vendor } from '@/types/supabase';
+import type { Vendor } from '@/types/db-types';
 import { FormSection, FormInput, FormButtons } from '@/components/forms';
 
 interface VendorFormProps {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
-import { Vendor } from '@/types/supabase';
+import { Vendor } from '@/types/db-types';
 import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '@/constants/crypto';
 import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, CurrencySelect, NetworkSelect } from '@/components/forms';
 import Button from '@/components/dashboard/Button';

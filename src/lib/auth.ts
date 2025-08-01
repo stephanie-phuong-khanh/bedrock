@@ -1,6 +1,7 @@
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
-import { supabaseAdmin } from "./supabase"
+import { supabaseAdmin } from "@/lib/supabase";
+import { User, InsertUser } from "@/types/db-types";
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -18,7 +19,7 @@ export const authOptions: NextAuthOptions = {
 					.from("users")
 					.select("*")
 					.eq("email", user.email)
-					.single();
+					.single<User>();
 
 				if (fetchError && fetchError.code !== "PGRST116") {
 					console.error("Error checking for existing user:", fetchError);
@@ -26,6 +27,15 @@ export const authOptions: NextAuthOptions = {
 				}
 
 				if (!existingUser) {
+					if (!user.name) {
+						console.error("User name is missing");
+						return false;
+					}
+					if (!account?.providerAccountId) {
+						console.error("Account provider account ID is missing");
+						return false;
+					}
+					
 					const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
 						email: user.email,
 						email_confirm: false,
@@ -42,16 +52,14 @@ export const authOptions: NextAuthOptions = {
 
 					const { error: createError } = await supabaseAdmin
 						.from("users")
-						.insert([
-							{
+						.insert<InsertUser>([{
+								supabase_uid: authUser.user.id,
 								email: user.email,
 								name: user.name,
-								avatar_url: user.image,
 								auth_provider: "google",
 								auth_provider_id: account?.providerAccountId,
-								supabase_uid: authUser.user.id,
-							},
-						]);
+								avatar_url: user.image,
+							}]);
 
 					if (createError) {
 						console.error("Error creating user in Supabase:", createError);
@@ -73,7 +81,7 @@ export const authOptions: NextAuthOptions = {
 						.from("users")
 						.select("supabase_uid, id")
 						.eq("email", user.email)
-						.single();
+						.single<User>();
 
 					if (error) {
 						console.error("Error fetching supabase_uid in jwt callback:", error);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
+import { Vendor, InsertVendor } from '@/types/db-types';
 
 // GET /api/vendors - Get all vendors for the current user
 export async function GET() {
@@ -15,7 +16,8 @@ export async function GET() {
       .select('*')
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .returns<Vendor[]>();
 
     if (error) {
       console.error('Error fetching vendors:', error);
@@ -46,22 +48,43 @@ export async function POST(request: Request) {
     const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
     
-    // Get vendor data from request
     const vendorData = await request.json();
-    
-    // Add user_id to the vendor data
-    const vendorWithUserId = {
+
+    // API validation
+    if (!vendorData) {
+      return NextResponse.json(
+        { error: 'No vendor data provided' },
+        { status: 400 }
+      );
+    }
+    if (!vendorData.name) {
+      return NextResponse.json(
+        { error: 'Vendor name is required' },
+        { status: 400 }
+      );
+    }
+    if (!vendorData.email) {
+      return NextResponse.json(
+        { error: 'Vendor email is required' },
+        { status: 400 }
+      );
+    }
+    vendorData.email = vendorData.email.toLowerCase();
+    if (!/\S+@\S+\.\S+/.test(vendorData.email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    const vendorWithUserId: InsertVendor = {
       ...vendorData,
       user_id: userId,
       supabase_uid: supabaseUid
     };
     
-    // Insert the new vendor
     const { data, error } = await supabase
       .from('vendors')
       .insert([vendorWithUserId])
       .select()
-      .single();
+      .single<Vendor>();
       
     if (error) {
       console.error('Error creating vendor:', error);

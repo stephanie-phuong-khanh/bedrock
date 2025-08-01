@@ -99,7 +99,7 @@ npx supabase migration new add-invoice-status-enum
 npx supabase db push
 
 # Generate Supabase types. This connects to the remote Supabase database (here `bedrock-dev`), introspects its schema, and generates Typescript type file that reflects all your current schema.
-npx supabase gen types typescript --project-ref dotshtajxdbyaficfbwv > src/types/supabase-types.ts
+npx supabase gen types typescript --project-id dotshtajxdbyaficfbwv > src/types/supabase-types.ts
 ```
 
 ### Deployment

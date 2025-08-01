@@ -108,7 +108,8 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
       }
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'adding'} vendor:`, error);
-      alert(`Failed to ${isEditing ? 'update' : 'add'} vendor. Please try again.`);
+      // TODO: Show error message in the UI instead of alert
+      alert(`Failed to ${isEditing ? 'update' : 'add'} vendor.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -138,6 +139,8 @@ export default function VendorForm({ onSuccess, vendor, isEditing = false }: Ven
             onChange={(e) => handleChange(e as React.ChangeEvent<HTMLInputElement | HTMLSelectElement>)}
             required
             placeholder="Enter email address"
+            pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+            title="Please enter a valid email address"
           />
         </FormSection>
         

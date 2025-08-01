@@ -2,6 +2,7 @@ import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
 import { supabaseAdmin } from "@/lib/supabase";
 import { User, InsertUser } from "@/types/db-types";
+import { createUserSchema } from "@/types/zod";
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -27,12 +28,16 @@ export const authOptions: NextAuthOptions = {
 				}
 
 				if (!existingUser) {
-					if (!user.name) {
-						console.error("User name is missing");
-						return false;
-					}
-					if (!account?.providerAccountId) {
-						console.error("Account provider account ID is missing");
+					const parsedUserData = createUserSchema.safeParse({
+						email: user.email,
+						name: user.name,
+						auth_provider: "google",
+						auth_provider_id: account?.providerAccountId,
+						avatar_url: user.image,
+					});
+					
+					if (!parsedUserData.success) {
+						console.error("Error parsing user data:", parsedUserData.error);
 						return false;
 					}
 					
@@ -40,6 +45,7 @@ export const authOptions: NextAuthOptions = {
 						email: user.email,
 						email_confirm: false,
 						user_metadata: {
+							name: user.name,
 							auth_provider: "google",
 							auth_provider_id: account?.providerAccountId,
 						},
@@ -53,13 +59,9 @@ export const authOptions: NextAuthOptions = {
 					const { error: createError } = await supabaseAdmin
 						.from("users")
 						.insert<InsertUser>([{
-								supabase_uid: authUser.user.id,
-								email: user.email,
-								name: user.name,
-								auth_provider: "google",
-								auth_provider_id: account?.providerAccountId,
-								avatar_url: user.image,
-							}]);
+							...parsedUserData.data,
+							supabase_uid: authUser.user.id,
+						}]);
 
 					if (createError) {
 						console.error("Error creating user in Supabase:", createError);

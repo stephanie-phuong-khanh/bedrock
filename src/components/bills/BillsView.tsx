@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { uploadInvoice } from '@/lib/invoice-utils';
-import { InvoiceWithFileUrl } from '@/types/supabase';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 import DraftsTab from '@/components/bills/DraftsTab';
 import PaidTab from '@/components/bills/PaidTab';
 import PaymentFlow from '@/components/bills/PaymentFlow';
@@ -21,7 +21,7 @@ export default function BillsView() {
 
   // Pay bill modal state
   const [showBillPaymentInitiatorModal, setShowBillPaymentInitiatorModal] = useState(false);
-  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithFileUrl | null>(null);
+  const [currentInvoice, setCurrentInvoice] = useState<InvoiceWithSignedUrl | null>(null);
   const [showPaymentFlow, setShowPaymentFlow] = useState(false);
   const [initiallyUploadingInvoice, setInitiallyUploadingInvoice] = useState(false);
   

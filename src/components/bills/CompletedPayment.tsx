@@ -1,35 +1,33 @@
 'use client';
 
-import { Vendor } from '@/types/supabase';
 import { getBlockExplorerUrl, getNetwork } from '@/constants/crypto';
 import { FormInput } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
+import { Vendor } from '@/types/db-types';
 
 interface CompletedPaymentProps {
   selectedVendor: Vendor | null;
-  fiatAmount: string;
-  fiatCurrency: string;
-  cryptoAsset: string;
-  cryptoAmount: string;
-  walletAddress: string;
-  network: string;
+  amount: string;
+  currency: string;
+  receiverWalletAddress: string;
+  paymentNetwork: string;
+  paidAt?: Date | null;
   txHash: string;
   onClose: () => void;
 }
 
 export default function CompletedPayment({
   selectedVendor,
-  fiatAmount,
-  fiatCurrency,
-  cryptoAsset,
-  cryptoAmount,
-  walletAddress,
-  network,
+  amount,
+  currency,
+  receiverWalletAddress,
+  paymentNetwork,
+  paidAt,
   txHash,
   onClose,
 }: CompletedPaymentProps) {
-  const blockExplorerUrl = getBlockExplorerUrl(network, txHash);
-  const networkInfo = getNetwork(network);
+  const blockExplorerUrl = getBlockExplorerUrl(paymentNetwork, txHash);
+  const networkInfo = getNetwork(paymentNetwork);
 
   return (
     <div className="px-4 pt-2 pb-4 space-y-6">
@@ -62,14 +60,14 @@ export default function CompletedPayment({
           <FormInput
             label="Amount"
             id="amount"
-            value={fiatAmount}
+            value={amount}
             onChange={() => {}} // No-op for read-only
             disabled
           />
           <FormInput
             label="Currency"
             id="currency"
-            value={fiatCurrency}
+            value={currency}
             onChange={() => {}} // No-op for read-only
             disabled
           />
@@ -79,39 +77,30 @@ export default function CompletedPayment({
         <FormInput
           label="Paid to"
           id="paid-to"
-          value={walletAddress}
+          value={receiverWalletAddress}
           onChange={() => {}} // No-op for read-only
           disabled
           className="font-mono text-sm"
         />
-        
-        {/* Asset & Network */}
-        <div className="grid grid-cols-2 gap-4">
-          <FormInput
-            label="Asset"
-            id="asset"
-            value={`${cryptoAmount} ${cryptoAsset}`}
-            onChange={() => {}} // No-op for read-only
-            disabled
-          />
-          <FormInput
-            label="Network"
-            id="network"
-            value={networkInfo?.name || network}
-            onChange={() => {}} // No-op for read-only
-            disabled
-          />
-        </div>
+
+        {/* Payment Network */}
+        <FormInput
+          label="Network"
+          id="payment-network"
+          value={networkInfo?.name || paymentNetwork}
+          onChange={() => {}} // No-op for read-only
+          disabled
+        />
         
         {/* Paid date */}
         <FormInput
           label="Paid date"
           id="paid-date"
-          value={new Date().toLocaleDateString('en-US', { 
+          value={paidAt?.toLocaleDateString('en-US', { 
             year: 'numeric', 
             month: 'short', 
             day: 'numeric' 
-          })}
+          }) || 'N/A'}
           onChange={() => {}} // No-op for read-only
           disabled
         />

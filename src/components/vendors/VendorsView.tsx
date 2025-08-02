@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import type { Vendor } from '@/types/supabase';
+import type { Vendor } from '@/types/db-types';
 import VendorForm from '@/components/vendors/VendorForm';
 import SidePanel from '@/components/dashboard/SidePanel';
 import Button from '@/components/dashboard/Button';

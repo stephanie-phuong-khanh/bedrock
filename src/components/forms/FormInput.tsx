@@ -13,6 +13,8 @@ interface FormInputProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+  pattern?: string;
+  title?: string;
 }
 
 export default function FormInput({
@@ -27,7 +29,9 @@ export default function FormInput({
   required = false,
   disabled = false,
   error,
-  className = ''
+  className = '',
+  pattern,
+  title
 }: FormInputProps) {
   return (
     <div className={className}>
@@ -54,6 +58,8 @@ export default function FormInput({
           }
           transition-colors duration-200
         `}
+        pattern={pattern}
+        title={title}
       />
       {error && (
         <p className="mt-1 text-sm text-red-600">{error}</p>

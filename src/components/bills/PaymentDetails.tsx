@@ -2,21 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { getBlockExplorerUrl, getPaymentNetworkNameFromId } from '@/constants/crypto';
-import { PaymentWithVendorName } from '@/types/payments';
-import { Invoice } from '@/types/supabase';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 import SidePanel from '@/components/dashboard/SidePanel';
 import InvoicePanel from '@/components/bills/InvoicePanel';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
+import { invoiceWithSignedUrlSchema } from '@/types/zod';
+import { PaymentEnriched } from '@/types/db-types';
 
 interface PaymentDetailsProps {
-  payment: PaymentWithVendorName | null;
+  payment: PaymentEnriched | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDetailsProps) {
-  const [invoice, setInvoice] = useState<Invoice & { fileUrl?: string } | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceWithSignedUrl| null>(null);
   const [isLoadingInvoice, setIsLoadingInvoice] = useState(false);
 
   // Format the date in a readable format
@@ -41,12 +42,24 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
       setIsLoadingInvoice(true);
       try {
         const response = await fetch(`/api/invoices/${payment.invoice_id}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setInvoice(data.invoice);
-          }
+        if (!response.ok) {
+          console.error('Failed to fetch invoice:', response.statusText);
+          return;
         }
+
+        const data = await response.json();
+        if (!data.success) {
+          console.error('Invoice fetch did not return success:', data.error);
+          return;
+        }
+
+        const parsed = invoiceWithSignedUrlSchema.safeParse(data.invoice);
+        if (!parsed.success) {
+          console.error('Invalid invoice data:', parsed.error);
+          return;
+        }
+
+        setInvoice(parsed.data);
       } catch (error) {
         console.error('Error fetching invoice:', error);
       } finally {
@@ -61,12 +74,6 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
 
   if (!isOpen || !payment) return null;
 
-  // Convert invoice to InvoiceWithFileUrl format for InvoicePanel
-  const invoiceForPanel = invoice ? {
-    ...invoice,
-    fileUrl: invoice.fileUrl || ''
-  } : null;
-
   return (
     <SidePanel
       isOpen={isOpen}
@@ -79,9 +86,9 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
           </div>
-        ) : invoiceForPanel ? (
+        ) : invoice ? (
           <InvoicePanel 
-            invoice={invoiceForPanel}
+            invoice={invoice}
             // No onUploadInvoice or onDelete props = read-only mode
           />
         ) : (
@@ -99,7 +106,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 <label className="block text-sm font-medium text-gray-700 mb-2">Vendor</label>
                 <input
                   type="text"
-                  value={`${payment.vendor_name}`}
+                  value={`${payment.vendor?.name}`}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                   readOnly
@@ -110,22 +117,45 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 <label className="block text-sm font-medium text-gray-700 mb-2">Invoice #</label>
                 <input
                   type="text"
-                  value={payment.invoice_data?.invoice_number || 'INV-2025-10292'}
+                  value={payment.invoice_number || '(Blank)'}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                   readOnly
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Date</label>
+                  <input
+                    type="text"
+                    value={formatDate(payment.invoice_date) || '(Blank)'}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                  <input
+                    type="text"
+                    value={formatDate(payment.due_date) || '(Blank)'}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+              </div>
             </FormSection>
 
             {/* Payment Details Section */}
-            <FormSection title="Payment Details" collapsible defaultExpanded={true}>
+            <FormSection title="Payment" collapsible defaultExpanded={true}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="cursor-not-allowed">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
                   <input
                     type="text"
-                    value={payment.fiat_amount.toString()}
+                    value={payment.amount.toString()}
                     disabled
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                     readOnly
@@ -135,7 +165,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                   <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
                   <input
                     type="text"
-                    value={payment.fiat_currency}
+                    value={payment.currency}
                     disabled
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                     readOnly
@@ -144,7 +174,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
               </div>
               
               <div className="cursor-not-allowed">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paid to</label>
                 <input
                   type="text"
                   value={payment.receiver_wallet_address || '0xC54BA68e29bb591f072DD84dca9327206FfAFb5a'}
@@ -153,35 +183,59 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                   readOnly
                 />
               </div>
+
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Paid from</label>
+                <input
+                  type="text"
+                  value={payment.sender_wallet_address || '(Blank)'}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
+                  readOnly
+                />
+              </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="cursor-not-allowed">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
-                  <input
-                    type="text"
-                    value={`${payment.crypto_amount} ${payment.crypto_asset}`}
-                    disabled
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                    readOnly
-                  />
-                </div>
-                <div className="cursor-not-allowed">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
-                  <input
-                    type="text"
-                    value={getPaymentNetworkNameFromId(payment.payment_network)}
-                    disabled
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-                    readOnly
-                  />
-                </div>
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
+                <input
+                  type="text"
+                  value={getPaymentNetworkNameFromId(payment.payment_network)}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
               </div>
               
               <div className="cursor-not-allowed">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Paid date</label>
                 <input
                   type="text"
-                  value={formatDate(payment.confirmed_at || payment.created_at)}
+                  value={formatDate(payment.paid_date)}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </FormSection>
+
+            {/* Details Section */}
+            <FormSection title="Details" collapsible defaultExpanded={false}>
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Memo</label>
+                <input
+                  type="text"
+                  value={payment.memo || '(Blank)'}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <input
+                  type="text"
+                  value={payment.payment_category?.name || '(Blank)'}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                   readOnly

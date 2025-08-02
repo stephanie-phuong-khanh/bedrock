@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { PaymentWithVendor, PaymentWithVendorName } from '@/types/payments';
 import PaymentDetails from '@/components/bills/PaymentDetails';
 import { getPaymentNetworkNameFromId } from '@/constants/crypto';
+import { PaymentEnriched } from '@/types/db-types';
 
 interface BillsTableProps {
   emptyStateComponent?: React.ReactNode;
-  filterPredicate?: (payment: PaymentWithVendorName) => boolean;
+  filterPredicate?: (payment: PaymentEnriched) => boolean;
   refreshTrigger?: number;
 }
 
@@ -16,9 +16,9 @@ export default function BillsTable({
   filterPredicate,
   refreshTrigger
 }: BillsTableProps) {
-  const [payments, setPayments] = useState<PaymentWithVendorName[]>([]);
+  const [payments, setPayments] = useState<PaymentEnriched[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentWithVendorName | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentEnriched | null>(null);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
 
   // Function to load bills (payment records)
@@ -34,22 +34,14 @@ export default function BillsTable({
         throw new Error(errorData.error || 'Failed to load bills');
       }
       
-      const data: PaymentWithVendor[] = await response.json();
-      
-      // Transform the data to include vendor_name and additional details from joined tables
-      let paymentsWithVendorNames: PaymentWithVendorName[] = data.map((payment) => ({
-        ...payment,
-        vendor_name: payment.vendors?.name || 'Unknown Vendor',
-        vendor_email: payment.vendors?.email,
-        invoice_data: payment.invoices,
-      }));
+      let paymentsWithVendorAndInvoice: PaymentEnriched[] = await response.json();
 
       // Apply filter if provided
       if (filterPredicate) {
-        paymentsWithVendorNames = paymentsWithVendorNames.filter(filterPredicate);
+        paymentsWithVendorAndInvoice = paymentsWithVendorAndInvoice.filter(filterPredicate);
       }
       
-      setPayments(paymentsWithVendorNames);
+      setPayments(paymentsWithVendorAndInvoice);
     } catch (error) {
       console.error('Error loading bills:', error);
     } finally {
@@ -73,7 +65,7 @@ export default function BillsTable({
   };
 
   // Handle payment row click
-  const handlePaymentClick = (payment: PaymentWithVendorName) => {
+  const handlePaymentClick = (payment: PaymentEnriched) => {
     setSelectedPayment(payment);
     setShowDetailsPanel(true);
   };
@@ -118,9 +110,6 @@ export default function BillsTable({
                     Amount
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Asset
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Network
                   </th>
                 </tr>
@@ -133,19 +122,14 @@ export default function BillsTable({
                     onClick={() => handlePaymentClick(payment)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{payment.vendor_name}</div>
+                      <div className="text-sm text-gray-900">{payment.vendor?.name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(payment.created_at)}
+                      {formatDate(payment.paid_date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {payment.fiat_amount} {payment.fiat_currency}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {payment.crypto_asset}
+                        {payment.amount} {payment.currency}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

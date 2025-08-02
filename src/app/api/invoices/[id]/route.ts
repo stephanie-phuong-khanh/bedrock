@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserSupabaseClient, supabaseAdmin } from '@/lib/supabase';
+import { Invoice } from '@/types/db-types';
 
 // GET /api/invoices/[id] - Get invoice details with signed URL
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
       .eq('id', id)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .single();
+      .single<Invoice>();
 
     if (invoiceError) {
       console.error('Error fetching invoice:', invoiceError);
@@ -33,7 +34,7 @@ export async function GET(
     // Generate a signed URL for the invoice file
     const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
       .from('invoices')
-      .createSignedUrl(invoice.file_path, 60 * 60); // 1 hour expiry
+      .createSignedUrl(invoice.storage_path, 60 * 60); // 1 hour expiry
 
     if (signedUrlError || !signedUrlData?.signedUrl) {
       console.error('Error generating signed URL:', signedUrlError);
@@ -48,7 +49,7 @@ export async function GET(
       success: true,
       invoice: {
         ...invoice,
-        fileUrl: signedUrlData.signedUrl
+        signedUrl: signedUrlData.signedUrl
       }
     });
   } catch (error: unknown) {
@@ -79,7 +80,7 @@ export async function DELETE(
       .eq('id', id)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .single();
+      .single<Invoice>();
 
     if (invoiceError) {
       console.error('Error fetching invoice:', invoiceError);
@@ -92,7 +93,7 @@ export async function DELETE(
     // Delete the invoice file from storage
     const { error: storageError } = await supabaseAdmin.storage
       .from('invoices')
-      .remove([invoice.file_path]);
+      .remove([invoice.storage_path]);
 
     if (storageError) {
       console.error('Error deleting invoice file:', storageError);

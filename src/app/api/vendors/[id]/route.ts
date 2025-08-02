@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
+import { Vendor, UpdateVendor } from '@/types/db-types';
+import { updateVendorSchema } from '@/types/zod';
 
 // GET /api/vendors/[id] - Get a specific vendor
 export async function GET(
@@ -20,7 +22,7 @@ export async function GET(
       .eq('id', id)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .single();
+      .single<Vendor>();
 
     if (vendorError) {
       console.error('Error fetching vendor:', vendorError);
@@ -53,7 +55,15 @@ export async function PATCH(
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
     
     // Get vendor data from request
-    const vendorData = await request.json();
+    const body = await request.json();
+    const parsedVendorData = updateVendorSchema.safeParse(body);
+    if (!parsedVendorData.success) {
+      return NextResponse.json(
+        { error: parsedVendorData.error.message },
+        { status: 400 }
+      );
+    }
+    const vendorData: UpdateVendor = parsedVendorData.data;
     
     // Update the vendor
     // RLS will ensure the user can only update their own vendors

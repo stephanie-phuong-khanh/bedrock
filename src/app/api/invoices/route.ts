@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUserSupabaseClient, supabaseAdmin } from '@/lib/supabase';
 import { analyzeFromSignedUrl } from '@/lib/ocr-textract';
+import { InsertInvoice, Invoice, UpdateInvoice } from '@/types/db-types';
+import { insertInvoiceSchema, updateInvoiceSchema } from '@/types/zod';
 
 // POST /api/invoices - Create a new invoice, which uploads the file to Supabase storage
 // and creates a record in the invoices table
@@ -11,8 +13,7 @@ export async function POST(request: NextRequest) {
 
 		// Get form data from the request
 		const formData = await request.formData();
-		const file = formData.get('file') as File;;
-		const vendorId = formData.get('vendorId') as string || null;
+		const file = formData.get('file') as File;
 
 		const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
 		console.log(`Authenticated as user: ${userEmail} (${userId})`);
@@ -61,20 +62,29 @@ export async function POST(request: NextRequest) {
 			return NextResponse.json({ error: 'Failed to generate signed URL' }, { status: 500 });
 		}
 
+		const invoicePayload = {
+			user_id: userId,
+			supabase_uid: supabaseUid,
+			storage_path: filePath,
+			ocr_data: null,
+		};
+
+		const parsedInvoiceData = insertInvoiceSchema.safeParse(invoicePayload);
+		if (!parsedInvoiceData.success) {
+			return NextResponse.json(
+				{ error: parsedInvoiceData.error.message },
+				{ status: 400 }
+			);
+		}
+
+		const invoice: InsertInvoice = parsedInvoiceData.data;
+
 		// Create a record in the invoices table
 		const { data, error: insertError } = await supabase
 			.from('invoices')
-			.insert({
-				user_id: userId,
-				vendor_id: vendorId,
-				file_path: filePath,
-				status: 'uploaded',
-				ocr_data: null,
-				invoice_number: null,
-				supabase_uid: supabaseUid,
-			})
+			.insert(invoice)
 			.select()
-			.single();
+			.single<Invoice>();
 
 		if (insertError) {
 			console.error('Error creating invoice record:', insertError);
@@ -85,36 +95,44 @@ export async function POST(request: NextRequest) {
 		}
 
 		// OCR invoice
-
-		// TODO: Keep going if OCR fails
-
 		try {
-			// TODO: Move out of this route handler
 			const ocrResult = await analyzeFromSignedUrl(signedUrlData.signedUrl);
+			console.log('Extraction result:', ocrResult);
 
-			console.log('Extraction result:', ocrResult); // TODO: Remove after dev
+			if (!ocrResult) {
+				console.warn('No OCR result found');
+			} else {
+				const ocrData = mapOcrToFormData(ocrResult);
 
-			if (ocrResult) {
-				data.ocr_data = mapOcrToFormData(ocrResult);
+				const parsed = updateInvoiceSchema.safeParse({
+					ocr_data: ocrData,
+				});
+				if (!parsed.success) {
+					console.error('Invalid update invoice payload:', parsed.error);
+					return NextResponse.json(
+						{ error: parsed.error.message },
+						{ status: 400 }
+					);
+				}
+				const updateInvoiceData = parsed.data as UpdateInvoice;
+
+				// Write OCR results to the invoice record
+				const { error: updateError } = await supabase
+					.from('invoices')
+					.update(updateInvoiceData)
+				.eq('id', data.id);
+
+				if (updateError) {
+					console.error('Error updating invoice record:', updateError);
+					return NextResponse.json(
+						{ error: 'Failed to update invoice record: ' + updateError.message },
+						{ status: 500 }
+					);
+				}
+
+				data.ocr_data = ocrData;
 			}
-
-			// Write OCR results to the invoice record
-			const { error: updateError } = await supabase
-				.from('invoices')
-				.update({
-					ocr_data: data.ocr_data,
-					invoice_number: data.ocr_data.invoiceNumber,
-				})
-			.eq('id', data.id);
-
-			if (updateError) {
-				console.error('Error updating invoice record:', updateError);
-				return NextResponse.json(
-					{ error: 'Failed to update invoice record: ' + updateError.message },
-					{ status: 500 }
-				);
-			}
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error('Error OCRing invoice:', error);
 		}
 
@@ -123,7 +141,7 @@ export async function POST(request: NextRequest) {
 			success: true,
 			invoice: {
 				...data,
-				fileUrl: signedUrlData.signedUrl
+				signedUrl: signedUrlData.signedUrl
 			}
 		});
 	} catch (error: unknown) {
@@ -135,18 +153,17 @@ export async function POST(request: NextRequest) {
 	}
 }
 
-
 // TODO: Potentially move into OCR utils
 function mapOcrToFormData(ocrResult: Record<string, string | null>) : Record<string, string | null> {
 	return {
 		invoiceNumber: ocrResult['INVOICE_NUMBER'],
 		invoiceDate: ocrResult['INVOICE_DATE'],
 		dueDate: ocrResult['DUE_DATE'],
-		fiatAmount: ocrResult['AMOUNT'],
-		fiatCurrency: ocrResult['CURRENCY']
+		// These fields are compatible with the legacy invoice schema where fiat amount and currency are stored
+		// amount: ocrResult['AMOUNT'],
+		// currency: ocrResult['CURRENCY']
 	}
 }
-
 
 // Ensure the invoices bucket exists
 async function ensureInvoicesBucket() {

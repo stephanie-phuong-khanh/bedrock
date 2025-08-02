@@ -20,32 +20,6 @@ export interface TokenContracts {
   [network: string]: `0x${string}`;
 }
 
-// Supported fiat currencies
-export interface FiatCurrency {
-  symbol: string;
-  name: string;
-  isEnabled: boolean;
-}
-
-// Supported fiat currencies with their details
-export const FIAT_CURRENCIES: Record<string, FiatCurrency> = {
-  'USD': {
-    symbol: 'USD',
-    name: 'USD',
-    isEnabled: true,
-  },
-  'EUR': {
-    symbol: 'EUR',
-    name: 'EUR',
-    isEnabled: false,
-  },
-  'GBP': {
-    symbol: 'GBP',
-    name: 'GBP',
-    isEnabled: false,
-  },
-};
-
 // Supported cryptocurrencies with their details
 export const CRYPTOCURRENCIES: Record<string, CryptoCurrency> = {
   'ETH': {
@@ -159,11 +133,6 @@ const WHITELISTED_TESTNET_EMAILS = [
   'echulshin8@gmail.com',
   'stephaniekdoan@gmail.com'
 ];
-
-// Helper functions
-export function getEnabledFiatCurrencies(): FiatCurrency[] {
-  return Object.values(FIAT_CURRENCIES).filter(fiat => fiat.isEnabled);
-}
 
 export function getEnabledCryptocurrencies(): CryptoCurrency[] {
   return Object.values(CRYPTOCURRENCIES).filter(crypto => crypto.isEnabled);

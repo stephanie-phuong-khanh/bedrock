@@ -1,6 +1,9 @@
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
-import { supabaseAdmin } from "./supabase"
+import { supabaseAdmin } from "@/lib/supabase";
+import { User, InsertUser, InsertPaymentCategory } from "@/types/db-types";
+import { createUserSchema } from "@/types/zod";
+import { DEFAULT_CATEGORY_NAMES } from "@/constants/seed";
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -18,7 +21,7 @@ export const authOptions: NextAuthOptions = {
 					.from("users")
 					.select("*")
 					.eq("email", user.email)
-					.single();
+					.single<User>();
 
 				if (fetchError && fetchError.code !== "PGRST116") {
 					console.error("Error checking for existing user:", fetchError);
@@ -26,10 +29,24 @@ export const authOptions: NextAuthOptions = {
 				}
 
 				if (!existingUser) {
+					const parsedUserData = createUserSchema.safeParse({
+						email: user.email,
+						name: user.name,
+						auth_provider: "google",
+						auth_provider_id: account?.providerAccountId,
+						avatar_url: user.image,
+					});
+					
+					if (!parsedUserData.success) {
+						console.error("Error parsing user data:", parsedUserData.error);
+						return false;
+					}
+					
 					const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
 						email: user.email,
 						email_confirm: false,
 						user_metadata: {
+							name: user.name,
 							auth_provider: "google",
 							auth_provider_id: account?.providerAccountId,
 						},
@@ -40,23 +57,37 @@ export const authOptions: NextAuthOptions = {
 						return false;
 					}
 
-					const { error: createError } = await supabaseAdmin
+					const { data: createdUser, error: createError } = await supabaseAdmin
 						.from("users")
-						.insert([
-							{
-								email: user.email,
-								name: user.name,
-								avatar_url: user.image,
-								auth_provider: "google",
-								auth_provider_id: account?.providerAccountId,
-								supabase_uid: authUser.user.id,
-							},
-						]);
+						.insert<InsertUser>([{
+							...parsedUserData.data,
+							supabase_uid: authUser.user.id,
+						}])
+						.select()
+						.single<User>();
 
 					if (createError) {
 						console.error("Error creating user in Supabase:", createError);
 						return false;
 					}
+
+					// Create default categories for the user
+					const categoryInserts: InsertPaymentCategory[] = DEFAULT_CATEGORY_NAMES.map(name => ({
+						name,
+						user_id: createdUser.id,
+						supabase_uid: authUser.user.id,
+					}));
+
+					const {	error: insertError } = await supabaseAdmin
+						.from("payment_categories")
+						.insert(categoryInserts);
+
+					if (insertError) {
+						console.error("Error creating default categories:", insertError);
+						return false;
+					}
+
+					console.log("Default categories created successfully for user:", createdUser.id)
 				}
 
 				return true;
@@ -73,7 +104,7 @@ export const authOptions: NextAuthOptions = {
 						.from("users")
 						.select("supabase_uid, id")
 						.eq("email", user.email)
-						.single();
+						.single<User>();
 
 					if (error) {
 						console.error("Error fetching supabase_uid in jwt callback:", error);

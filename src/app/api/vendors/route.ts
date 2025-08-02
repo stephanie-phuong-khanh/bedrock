@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
+import { Vendor, InsertVendor } from '@/types/db-types';
+import { createVendorSchema } from '@/types/zod';
 
 // GET /api/vendors - Get all vendors for the current user
 export async function GET() {
@@ -15,7 +17,8 @@ export async function GET() {
       .select('*')
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .returns<Vendor[]>();
 
     if (error) {
       console.error('Error fetching vendors:', error);
@@ -44,25 +47,36 @@ export async function POST(request: Request) {
     console.log('POST /api/vendors - Starting request');
     
     const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
+    if (!userId || !userEmail || !supabaseUid) {
+      return NextResponse.json(
+        { error: 'Unauthorized, no user information in session' },
+        { status: 401 }
+      );
+    }
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
     
-    // Get vendor data from request
-    const vendorData = await request.json();
-    
-    // Add user_id to the vendor data
-    const vendorWithUserId = {
+    const body = await request.json();
+    const parsedVendorData = createVendorSchema.safeParse(body);
+    if (!parsedVendorData.success) {
+      return NextResponse.json(
+        { error: parsedVendorData.error.message },
+        { status: 400 }
+      );
+    }
+    const vendorData = parsedVendorData.data;
+
+    const vendorWithUserId: InsertVendor = {
       ...vendorData,
       user_id: userId,
       supabase_uid: supabaseUid
     };
     
-    // Insert the new vendor
     const { data, error } = await supabase
       .from('vendors')
       .insert([vendorWithUserId])
       .select()
-      .single();
-      
+      .single<Vendor>();
+    
     if (error) {
       console.error('Error creating vendor:', error);
       return NextResponse.json(

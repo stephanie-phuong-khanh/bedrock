@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { User } from '@/types/db-types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('id, supabase_uid')
       .eq('id', userId)
-      .single();
+      .single<User>();
     
     if (error || !user) {
       console.log('User validation failed:', error || 'User not found');

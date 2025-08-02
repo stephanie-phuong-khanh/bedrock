@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
+import { Payment } from '@/types/db-types';
 
 // GET /api/payments/[id] - Get a specific payment
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
       .eq('id', id)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .single();
+      .single<Payment>();
 
     if (paymentError) {
       console.error('Error fetching payment:', paymentError);

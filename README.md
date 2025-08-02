@@ -69,7 +69,7 @@ npm install
 npm run dev
 
 # Currently, `npm run dev` does not work after adding Dynamic libraries, so run `npm run build` and `npm run start` instead
-# TODO: fix this
+# This latency is a known issue by the Dynamic team.
 npm run build
 npm run start
 ```

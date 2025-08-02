@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
 import { createPaymentInputSchema, insertPaymentSchema } from '@/types/zod';
-import { Payment, PaymentWithVendorAndInvoice } from '@/types/db-types';
+import { Payment, PaymentEnriched } from '@/types/db-types';
 
-// GET /api/payments - Get all payments with joined vendor and invoice data, for the current user
+// GET /api/payments - Get all payments with joined vendor, invoice, and payment category data, for the current user
 export async function GET() {
   try {
     console.log('GET /api/payments - Starting request');
@@ -17,12 +17,13 @@ export async function GET() {
       .select(`
         *,
         vendor:payments_vendor_id_fkey(*),
-        invoice:payments_invoice_id_fkey(*)
+        invoice:payments_invoice_id_fkey(*),
+        payment_category:payments_category_id_fkey(*)
       `)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
       .order('created_at', { ascending: false })
-      .returns<PaymentWithVendorAndInvoice[]>();
+      .returns<PaymentEnriched[]>();
 
     if (error) {
       console.error('Error fetching payments:', error);

@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 			success: true,
 			invoice: {
 				...data,
-				fileUrl: signedUrlData.signedUrl
+				signedUrl: signedUrlData.signedUrl
 			}
 		});
 	} catch (error: unknown) {

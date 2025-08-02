@@ -8,6 +8,7 @@ import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, Currenc
 import Button from '@/components/dashboard/Button';
 import { useUserSession } from "@/context/UserSessionContext";
 import { createVendorSchema } from '@/types/zod';
+import { PaymentCategory } from '@/types/db-types';
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -18,6 +19,10 @@ interface PaymentFormProps {
   onVendorChange?: (vendor: Vendor | null) => void;
   initialFormData?: PaymentFormData | null;
   onVendorCreated?: (vendor: Vendor) => void;
+  paymentCategories: PaymentCategory[];
+  isLoadingPaymentCategories: boolean;
+  selectedCategory?: PaymentCategory | null;
+  onCategoryChange?: (category: PaymentCategory | null) => void;
 }
 
 export interface PaymentFormData {
@@ -30,19 +35,22 @@ export interface PaymentFormData {
   receiverWalletAddress: string;
   paymentNetwork: string;
   memo?: string;
-  departmentId?: string;
-  categoryId?: string;
+  selectedCategory?: PaymentCategory | null;
 }
 
 export default function PaymentForm({ 
   vendors, 
   isLoadingVendors, 
-  errorMessage, 
+  errorMessage,
   onSubmit, 
   selectedVendor: initialSelectedVendor,
   onVendorChange,
   initialFormData,
-  onVendorCreated
+  onVendorCreated,
+  paymentCategories,
+  isLoadingPaymentCategories,
+  selectedCategory: initialSelectedCategory,
+  onCategoryChange,
 }: PaymentFormProps) {
   const { session } = useUserSession();
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
@@ -54,8 +62,7 @@ export default function PaymentForm({
   const [receiverWalletAddress, setReceiverWalletAddress] = useState<string>(initialFormData?.receiverWalletAddress || '');
   const [paymentNetwork, setPaymentNetwork] = useState<string>(initialFormData?.paymentNetwork || '');
   const [memo, setMemo] = useState<string>(initialFormData?.memo || '');
-  const [categoryId, setCategoryId] = useState<string>(initialFormData?.categoryId || '');
-  const [departmentId, setDepartmentId] = useState<string>(initialFormData?.departmentId || '');
+  const [selectedCategory, setSelectedCategory] = useState<PaymentCategory | null>(initialSelectedCategory || null);
 
   // Validation state
   const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
@@ -89,6 +96,7 @@ export default function PaymentForm({
       setInvoiceNumber(initialFormData.invoiceNumber || '');
       setInvoiceDate(initialFormData.invoiceDate || '');
       setDueDate(initialFormData.dueDate || '');
+      setSelectedCategory(initialFormData.selectedCategory || null);
     }
   }, [initialFormData]);
 
@@ -130,6 +138,19 @@ export default function PaymentForm({
     const vendor = vendors.find(v => v.id === vendorId);
     setSelectedVendor(vendor || null);
     onVendorChange?.(vendor || null);
+  };
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const categoryId = e.target.value;
+    if (!categoryId) {
+      setSelectedCategory(null);
+      onCategoryChange?.(null);
+      return;
+    }
+    
+    const category = paymentCategories.find(c => c.id === categoryId);
+    setSelectedCategory(category || null);
+    onCategoryChange?.(category || null);
   };
 
   // Handle showing vendor creation form
@@ -237,8 +258,7 @@ export default function PaymentForm({
       receiverWalletAddress,
       paymentNetwork,
       memo,
-      departmentId,
-      categoryId,
+      selectedCategory,
     });
   };
 
@@ -446,24 +466,25 @@ export default function PaymentForm({
           <FormSelect
             label="Category"
             id="category"
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            options={[
-              /* TODO: fetch categories from API */
-            ]}
+            value={selectedCategory?.id || ''}
+            onChange={(e) => handleCategoryChange(e)}
+            options={paymentCategories.map(category => ({
+              value: category.id,
+              label: category.name,
+            }))}
             placeholder="Select a category"
+            disabled={isLoadingPaymentCategories}
           />
 
-          <FormSelect
+          {/* Hiding department for now */}
+          {/* <FormSelect
             label="Department"
             id="department"
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value)}
-            options={[
-              /* TODO: fetch departments from API */
-            ]}
+            options={[]}
             placeholder="Select a department"
-          />
+          /> */}
         </FormSection>
         
         <FormButtons

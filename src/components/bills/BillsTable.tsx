@@ -3,11 +3,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import PaymentDetails from '@/components/bills/PaymentDetails';
 import { getPaymentNetworkNameFromId } from '@/constants/crypto';
-import { PaymentWithVendorAndInvoice } from '@/types/db-types';
+import { PaymentEnriched } from '@/types/db-types';
 
 interface BillsTableProps {
   emptyStateComponent?: React.ReactNode;
-  filterPredicate?: (payment: PaymentWithVendorAndInvoice) => boolean;
+  filterPredicate?: (payment: PaymentEnriched) => boolean;
   refreshTrigger?: number;
 }
 
@@ -16,9 +16,9 @@ export default function BillsTable({
   filterPredicate,
   refreshTrigger
 }: BillsTableProps) {
-  const [payments, setPayments] = useState<PaymentWithVendorAndInvoice[]>([]);
+  const [payments, setPayments] = useState<PaymentEnriched[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentWithVendorAndInvoice | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentEnriched | null>(null);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
 
   // Function to load bills (payment records)
@@ -34,7 +34,7 @@ export default function BillsTable({
         throw new Error(errorData.error || 'Failed to load bills');
       }
       
-      let paymentsWithVendorAndInvoice: PaymentWithVendorAndInvoice[] = await response.json();
+      let paymentsWithVendorAndInvoice: PaymentEnriched[] = await response.json();
 
       // Apply filter if provided
       if (filterPredicate) {
@@ -65,7 +65,7 @@ export default function BillsTable({
   };
 
   // Handle payment row click
-  const handlePaymentClick = (payment: PaymentWithVendorAndInvoice) => {
+  const handlePaymentClick = (payment: PaymentEnriched) => {
     setSelectedPayment(payment);
     setShowDetailsPanel(true);
   };

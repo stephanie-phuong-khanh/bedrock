@@ -8,10 +8,10 @@ import InvoicePanel from '@/components/bills/InvoicePanel';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
 import { invoiceWithSignedUrlSchema } from '@/types/zod';
-import { PaymentWithVendorAndInvoice } from '@/types/db-types';
+import { PaymentEnriched } from '@/types/db-types';
 
 interface PaymentDetailsProps {
-  payment: PaymentWithVendorAndInvoice | null;
+  payment: PaymentEnriched | null;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -123,10 +123,33 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                   readOnly
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Invoice Date</label>
+                  <input
+                    type="text"
+                    value={formatDate(payment.invoice_date) || '(Blank)'}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+                <div className="cursor-not-allowed">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                  <input
+                    type="text"
+                    value={formatDate(payment.due_date) || '(Blank)'}
+                    disabled
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    readOnly
+                  />
+                </div>
+              </div>
             </FormSection>
 
             {/* Payment Details Section */}
-            <FormSection title="Payment Details" collapsible defaultExpanded={true}>
+            <FormSection title="Payment" collapsible defaultExpanded={true}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="cursor-not-allowed">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
@@ -188,6 +211,31 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 <input
                   type="text"
                   value={formatDate(payment.paid_date)}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+            </FormSection>
+
+            {/* Details Section */}
+            <FormSection title="Details" collapsible defaultExpanded={false}>
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Memo</label>
+                <input
+                  type="text"
+                  value={payment.memo || '(Blank)'}
+                  disabled
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  readOnly
+                />
+              </div>
+
+              <div className="cursor-not-allowed">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                <input
+                  type="text"
+                  value={payment.payment_category?.name || '(Blank)'}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                   readOnly

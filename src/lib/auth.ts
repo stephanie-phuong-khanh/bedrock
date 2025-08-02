@@ -1,8 +1,9 @@
 import GoogleProvider from "next-auth/providers/google"
 import type { NextAuthOptions } from "next-auth"
 import { supabaseAdmin } from "@/lib/supabase";
-import { User, InsertUser } from "@/types/db-types";
+import { User, InsertUser, InsertPaymentCategory } from "@/types/db-types";
 import { createUserSchema } from "@/types/zod";
+import { DEFAULT_CATEGORY_NAMES } from "@/constants/seed";
 
 export const authOptions: NextAuthOptions = {
 	providers: [
@@ -56,17 +57,37 @@ export const authOptions: NextAuthOptions = {
 						return false;
 					}
 
-					const { error: createError } = await supabaseAdmin
+					const { data: createdUser, error: createError } = await supabaseAdmin
 						.from("users")
 						.insert<InsertUser>([{
 							...parsedUserData.data,
 							supabase_uid: authUser.user.id,
-						}]);
+						}])
+						.select()
+						.single<User>();
 
 					if (createError) {
 						console.error("Error creating user in Supabase:", createError);
 						return false;
 					}
+
+					// Create default categories for the user
+					const categoryInserts: InsertPaymentCategory[] = DEFAULT_CATEGORY_NAMES.map(name => ({
+						name,
+						user_id: createdUser.id,
+						supabase_uid: authUser.user.id,
+					}));
+
+					const {	error: insertError } = await supabaseAdmin
+						.from("payment_categories")
+						.insert(categoryInserts);
+
+					if (insertError) {
+						console.error("Error creating default categories:", insertError);
+						return false;
+					}
+
+					console.log("Default categories created successfully for user:", createdUser.id)
 				}
 
 				return true;

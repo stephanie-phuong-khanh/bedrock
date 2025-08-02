@@ -5,7 +5,7 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
 import { createPaymentInputSchema } from '@/types/zod';
-import { InvoiceWithSignedUrl } from '@/types/db-types';
+import { InvoiceWithSignedUrl, PaymentCategory } from '@/types/db-types';
 import { Vendor } from '@/types/db-types';
 import InvoicePanel from '@/components/bills/InvoicePanel';
 import PaymentForm, { PaymentFormData } from '@/components/bills/PaymentForm';
@@ -40,6 +40,11 @@ export default function PaymentFlow({
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
+
+  const [paymentCategories, setPaymentCategories] = useState<PaymentCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<PaymentCategory | null>(null);
+  const [isLoadingPaymentCategories, setIsLoadingPaymentCategories] = useState(true);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Payment flow state
@@ -105,10 +110,35 @@ export default function PaymentFlow({
       }
     }
   };
-  
-  // Fetch vendors on component mount
+
+  const fetchPaymentCategories = async () => {
+    try {
+      setIsLoadingPaymentCategories(true);
+
+      // Use the API endpoint instead of direct Supabase access
+      const response = await fetch('/api/payment_categories', {
+        credentials: 'include', // Include cookies with the request
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load payment categories');
+      }
+      
+      const data = await response.json();
+      setPaymentCategories(data.paymentCategories || []);
+    } catch (err: unknown) {
+      console.error('Error fetching payment categories:', err);
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to load payment categories');
+    } finally {
+      setIsLoadingPaymentCategories(false);
+    }
+  };
+
+  // Fetch vendors and payment categories on component mount
   useEffect(() => {
     fetchVendors();
+    fetchPaymentCategories();
   }, []);
 
   // Handle invoice upload and populate payment form from OCR results
@@ -127,8 +157,7 @@ export default function PaymentFlow({
           receiverWalletAddress: '',
           paymentNetwork: '',
           memo: '',
-          departmentId: '',
-          categoryId: '',
+          selectedCategory: null,
         };
         // Only overwrite fields present in OCR
         return {
@@ -271,8 +300,8 @@ export default function PaymentFlow({
         tx_hash: hash,
         paid_date: paidAt.toISOString(),
         memo: paymentData.memo?.trim() || null,
-        category_id: paymentData.categoryId?.trim() || null,
-        department_id: paymentData.departmentId?.trim() || null,
+        category_id: selectedCategory?.id || null,
+        department_id: null,
       };
       console.log('Payment data to submit:', paymentDataToSubmit);
       const parsedPayment = createPaymentInputSchema.safeParse(paymentDataToSubmit);
@@ -343,6 +372,10 @@ export default function PaymentFlow({
     setSelectedVendor(vendor);
   };
 
+  const handleCategoryChange = (category: PaymentCategory | null) => {
+    setSelectedCategory(category);
+  };
+
   const handleClose = () => {
     // If payment was completed successfully, notify parent before closing
     if (showCompleted && paymentSuccess) {
@@ -406,6 +439,10 @@ export default function PaymentFlow({
               onVendorChange={handleVendorChange}
               initialFormData={paymentData}
               onVendorCreated={handleVendorCreated}
+              paymentCategories={paymentCategories}
+              isLoadingPaymentCategories={isLoadingPaymentCategories}
+              selectedCategory={paymentData?.selectedCategory}
+              onCategoryChange={handleCategoryChange}
             />
           )}
           
@@ -420,8 +457,7 @@ export default function PaymentFlow({
               receiverWalletAddress={paymentData.receiverWalletAddress}
               paymentNetwork={paymentData.paymentNetwork}
               memo={paymentData.memo}
-              departmentId={paymentData.departmentId}
-              categoryId={paymentData.categoryId}
+              selectedCategory={paymentData.selectedCategory}
               onBack={handleBack}
               onConfirm={handleConfirmPayment}
               isProcessingPayment={isProcessingPayment}

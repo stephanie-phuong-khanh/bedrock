@@ -1,7 +1,7 @@
 'use client';
 
 import { DynamicEmbeddedWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core';
-import { Vendor } from '@/types/db-types';
+import { PaymentCategory, Vendor } from '@/types/db-types';
 import { useEffect, useState } from 'react';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
@@ -17,8 +17,7 @@ interface ConfirmPaymentProps {
   receiverWalletAddress: string;
   paymentNetwork: string;
   memo?: string;
-  departmentId?: string;
-  categoryId?: string;
+  selectedCategory?: PaymentCategory | null;
   onBack: () => void;
   onConfirm: () => void;
   isProcessingPayment?: boolean;
@@ -37,8 +36,7 @@ export default function ConfirmPayment({
   receiverWalletAddress,
   paymentNetwork,
   memo,
-  departmentId,
-  categoryId,
+  selectedCategory,
   onBack,
   onConfirm,
   isProcessingPayment = false,
@@ -252,17 +250,17 @@ export default function ConfirmPayment({
         </div>
 
         <div className="cursor-not-allowed">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category (TODO)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
           <input
             type="text"
-            value={categoryId || '(Blank)'}
+            value={selectedCategory?.name || '(Blank)'}
             disabled
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
             readOnly
           />
         </div>
 
-        <div className="cursor-not-allowed">
+        {/* <div className="cursor-not-allowed">
           <label className="block text-sm font-medium text-gray-700 mb-2">Department (TODO)</label>
           <input
             type="text"
@@ -271,7 +269,7 @@ export default function ConfirmPayment({
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
             readOnly
           />
-        </div>
+        </div> */}
       </FormSection>
       
       {/* Action Buttons */}

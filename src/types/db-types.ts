@@ -15,7 +15,11 @@ export type UpdateInvoice = Database['public']['Tables']['invoices']['Update'];
 export type Payment = Database['public']['Tables']['payments']['Row'];
 export type InsertPayment = Database['public']['Tables']['payments']['Insert'];
 export type UpdatePayment = Database['public']['Tables']['payments']['Update'];
-export type PaymentWithVendorAndInvoice = Payment & {
+export type PaymentEnriched = Payment & {
 	vendor: Vendor | null;
 	invoice: Invoice | null;
+	payment_category: PaymentCategory | null;
 };
+
+export type PaymentCategory = Database['public']['Tables']['payment_categories']['Row'];
+export type InsertPaymentCategory = Database['public']['Tables']['payment_categories']['Insert'];

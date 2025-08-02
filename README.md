@@ -87,7 +87,7 @@ The project ref for `bedrock-prod` is `rdmdsrjdgwauxoydvydi`.
 ### Local Development
 
 ```bash
-# Link to Supabase project if not already linked
+# Link to Supabase dev project if not already linked
 npx supabase link --project-ref dotshtajxdbyaficfbwv
 
 # Create a new migration
@@ -105,11 +105,13 @@ npx supabase gen types typescript --project-id dotshtajxdbyaficfbwv > src/types/
 ### Deployment
 
 ```bash
-# Link to Supabase project if not already linked
-npx supabase link --project-ref rdmdsrjdgwauxoydvydi
+# We have to use dotenv to use the prod environment variables .env, to authenticate to the prod Supabase project
+
+# Link to Supabase prod project if not already linked
+npx dotenv -e .env -- npx supabase link --project-ref rdmdsrjdgwauxoydvydi
 
 # Apply all migrations to prod database. Make sure you do this around the time new changes are deployed to Vercel on main (prod), if the changes are dependent on the migrations
-npx supabase db push
+npx dotenv -e .env -- npx supabase db push
 ```
 
 ## Deployment

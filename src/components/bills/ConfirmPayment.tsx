@@ -5,20 +5,20 @@ import { Vendor } from '@/types/db-types';
 import { useEffect, useState } from 'react';
 import { FormSection } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
+import { getPaymentNetworkNameFromId } from '@/constants/crypto';
 
 interface ConfirmPaymentProps {
-  selectedVendor: Vendor | null;
-  fiatAmount: string;
-  fiatCurrency: string;
-  cryptoAsset: string;
-  cryptoAmount: string;
-  walletAddress: string;
-  network: string;
-  memo: string;
-  category: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
+  selectedVendor: Vendor;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  amount: string;
+  currency: string;
+  receiverWalletAddress: string;
+  paymentNetwork: string;
+  memo?: string;
+  departmentId?: string;
+  categoryId?: string;
   onBack: () => void;
   onConfirm: () => void;
   isProcessingPayment?: boolean;
@@ -29,17 +29,16 @@ interface ConfirmPaymentProps {
 
 export default function ConfirmPayment({
   selectedVendor,
-  fiatAmount,
-  fiatCurrency,
-  cryptoAsset,
-  cryptoAmount,
-  walletAddress,
-  network,
-  memo,
-  category,
   invoiceNumber,
   invoiceDate,
   dueDate,
+  amount,
+  currency,
+  receiverWalletAddress,
+  paymentNetwork,
+  memo,
+  departmentId,
+  categoryId,
   onBack,
   onConfirm,
   isProcessingPayment = false,
@@ -135,7 +134,7 @@ export default function ConfirmPayment({
           <div className="cursor-not-allowed">
             <label className="block text-sm font-medium text-gray-700 mb-2">Invoice date</label>
             <input
-              type="text"
+              type="date"
               value={invoiceDate || '(Blank)'}
               disabled
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
@@ -145,7 +144,7 @@ export default function ConfirmPayment({
           <div className="cursor-not-allowed">
             <label className="block text-sm font-medium text-gray-700 mb-2">Due date</label>
             <input
-              type="text"
+              type="date"
               value={dueDate || '(Blank)'}
               disabled
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
@@ -162,7 +161,7 @@ export default function ConfirmPayment({
             <label className="block text-sm font-medium text-gray-700 mb-2">Amount</label>
             <input
               type="text"
-              value={fiatAmount}
+              value={amount}
               disabled
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
               readOnly
@@ -172,7 +171,7 @@ export default function ConfirmPayment({
             <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
             <input
               type="text"
-              value={fiatCurrency}
+              value={currency}
               disabled
               className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
               readOnly
@@ -184,35 +183,23 @@ export default function ConfirmPayment({
           <label className="block text-sm font-medium text-gray-700 mb-2">Pay to</label>
           <div className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 font-mono text-sm cursor-not-allowed">
             {/* Format full address with bold segments */}
-            <span className="font-bold">{walletAddress.slice(0, 6)}</span>
-            {walletAddress.slice(6, -4)}
-            <span className="font-bold">{walletAddress.slice(-4)}</span>
+            <span className="font-bold">{receiverWalletAddress.slice(0, 6)}</span>
+            {receiverWalletAddress.slice(6, -4)}
+            <span className="font-bold">{receiverWalletAddress.slice(-4)}</span>
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="cursor-not-allowed">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Asset</label>
-            <input
-              type="text"
-              value={`${cryptoAmount} ${cryptoAsset}`}
-              disabled
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-              readOnly
-            />
-          </div>
-          <div className="cursor-not-allowed">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
-            <input
-              type="text"
-              value={network}
-              disabled
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-              readOnly
-            />
-          </div>
+
+        <div className="cursor-not-allowed">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Network</label>
+          <input
+            type="text"
+            value={getPaymentNetworkNameFromId(paymentNetwork)}
+            disabled
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+            readOnly
+          />
         </div>
-        
+
         {/* Pay from */}
         {primaryWallet && (
           <div>
@@ -254,17 +241,6 @@ export default function ConfirmPayment({
       {/* Details Section - Collapsible, starts collapsed */}
       <FormSection title="Details" collapsible defaultExpanded={false}>
         <div className="cursor-not-allowed">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-          <input
-            type="text"
-            value={category || '(Blank)'}
-            disabled
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-            readOnly
-          />
-        </div>
-        
-        <div className="cursor-not-allowed">
           <label className="block text-sm font-medium text-gray-700 mb-2">Memo</label>
           <input
             type="text"
@@ -274,9 +250,29 @@ export default function ConfirmPayment({
             readOnly
           />
         </div>
+
+        <div className="cursor-not-allowed">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Category (TODO)</label>
+          <input
+            type="text"
+            value={categoryId || '(Blank)'}
+            disabled
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+            readOnly
+          />
+        </div>
+
+        <div className="cursor-not-allowed">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Department (TODO)</label>
+          <input
+            type="text"
+            value={departmentId || '(Blank)'}
+            disabled
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+            readOnly
+          />
+        </div>
       </FormSection>
-
-
       
       {/* Action Buttons */}
       <div className="flex justify-end items-center pt-6 gap-3">

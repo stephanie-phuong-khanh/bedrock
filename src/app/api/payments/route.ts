@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createUserSupabaseClient } from '@/lib/supabase';
-import { PaymentCreationPayload } from '@/types/supabase';
+import { createPaymentInputSchema, insertPaymentSchema } from '@/types/zod';
+import { Payment, PaymentWithVendorAndInvoice } from '@/types/db-types';
 
-// GET /api/payments - Get all payments for the current user
+// GET /api/payments - Get all payments with joined vendor and invoice data, for the current user
 export async function GET() {
   try {
     console.log('GET /api/payments - Starting request');
@@ -15,21 +16,13 @@ export async function GET() {
       .from('payments')
       .select(`
         *,
-        vendors!payments_vendor_id_fkey(
-          name,
-          email
-        ),
-        invoices!payments_invoice_id_fkey(
-          id,
-          invoice_number,
-          status,
-          file_path,
-          created_at
-        )
+        vendor:payments_vendor_id_fkey(*),
+        invoice:payments_invoice_id_fkey(*)
       `)
       .eq('user_id', userId)
       .eq('supabase_uid', supabaseUid)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .returns<PaymentWithVendorAndInvoice[]>();
 
     if (error) {
       console.error('Error fetching payments:', error);
@@ -56,21 +49,34 @@ export async function POST(request: Request) {
     console.log('POST /api/payments - Starting request');
     
     const { supabase, userId, userEmail, supabaseUid } = await createUserSupabaseClient();
+    if (!userId || !supabaseUid) {
+      return NextResponse.json(
+        { error: 'Unauthorized, no user information in session' },
+        { status: 401 }
+      );
+    }
     console.log(`Authenticated as user: ${userEmail} (${userId})`);
-    
-    const paymentData: PaymentCreationPayload = await request.json();
-    const paymentWithUserId = {
-      ...paymentData,
+
+    // Validate client payload
+    const parsedCreate = createPaymentInputSchema.safeParse(await request.json());
+    if (!parsedCreate.success) {
+      console.error('Validation error in payment:', parsedCreate.error);
+      return NextResponse.json({ error: parsedCreate.error.message }, { status: 400 });
+    }
+
+    // Merge with server-only fields & validate again
+    const finalPayment = insertPaymentSchema.parse({
+      ...parsedCreate.data,
       user_id: userId,
       supabase_uid: supabaseUid,
-    };
-    
-    // Insert the payment
+    });
+
+    // Insert into DB (no need to cast again)
     const { data, error } = await supabase
       .from('payments')
-      .insert([paymentWithUserId])
+      .insert([finalPayment])
       .select()
-      .single();
+      .single<Payment>();
       
     if (error) {
       console.error('Error creating payment:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { InvoiceWithFileUrl } from '@/types/supabase';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 import BillsTable from '@/components/bills/BillsTable';
 import PaymentFlow from '@/components/bills/PaymentFlow';
 import BillPaymentInitiator from '@/components/bills/BillPaymentInitiator';
@@ -10,8 +10,8 @@ interface PaidTabProps {
   refreshPaidBillsTableTrigger?: number;
   showPaymentFlow: boolean;
   setShowPaymentFlow: (show: boolean) => void;
-  currentInvoice: InvoiceWithFileUrl | null;
-  setCurrentInvoice: (invoice: InvoiceWithFileUrl | null) => void;
+  currentInvoice: InvoiceWithSignedUrl | null;
+  setCurrentInvoice: (invoice: InvoiceWithSignedUrl | null) => void;
   initiallyUploadingInvoice: boolean;
   setInitiallyUploadingInvoice: (show: boolean) => void;
   onClosePaymentFlow: () => void;

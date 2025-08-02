@@ -136,6 +136,7 @@ export type Database = {
           invoice_number: string | null
           memo: string | null
           paid_date: string | null
+          payment_network: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address: string
           sender_wallet_address: string
           supabase_uid: string
@@ -157,6 +158,7 @@ export type Database = {
           invoice_number?: string | null
           memo?: string | null
           paid_date?: string | null
+          payment_network: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address: string
           sender_wallet_address: string
           supabase_uid: string
@@ -178,6 +180,7 @@ export type Database = {
           invoice_number?: string | null
           memo?: string | null
           paid_date?: string | null
+          payment_network?: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address?: string
           sender_wallet_address?: string
           supabase_uid?: string
@@ -307,6 +310,14 @@ export type Database = {
     }
     Enums: {
       currency_code: "USDC"
+      payment_network:
+        | "ethereum"
+        | "base"
+        | "arbitrum"
+        | "optimism"
+        | "polygon"
+        | "avalanche"
+        | "base-sepolia"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -435,6 +446,15 @@ export const Constants = {
   public: {
     Enums: {
       currency_code: ["USDC"],
+      payment_network: [
+        "ethereum",
+        "base",
+        "arbitrum",
+        "optimism",
+        "polygon",
+        "avalanche",
+        "base-sepolia",
+      ],
     },
   },
 } as const

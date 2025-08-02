@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
 import { erc20Abi, parseUnits } from 'viem';
-import { InvoiceWithFileUrl, PaymentCreationPayload } from '@/types/supabase';
+import { createPaymentInputSchema } from '@/types/zod';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 import { Vendor } from '@/types/db-types';
 import InvoicePanel from '@/components/bills/InvoicePanel';
 import PaymentForm, { PaymentFormData } from '@/components/bills/PaymentForm';
@@ -19,7 +20,7 @@ import {
 } from '@/constants/crypto';
 
 interface PaymentFlowProps {
-  invoice?: InvoiceWithFileUrl | null;
+  invoice?: InvoiceWithSignedUrl | null;
   onClose: () => void;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
@@ -51,16 +52,7 @@ export default function PaymentFlow({
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
-
-  // Set selected vendor if invoice has a vendor_id
-  useEffect(() => {
-    if (invoice && invoice.vendor_id && vendors.length > 0) {
-      const vendor = vendors.find(v => v.id === invoice.vendor_id);
-      if (vendor) {
-        setSelectedVendor(vendor);
-      }
-    }
-  }, [invoice, vendors]);
+  const [paidAt, setPaidAt] = useState<Date | null>(null);
   
   // Fetch vendors function (reusable)
   const fetchVendors = async () => {
@@ -127,18 +119,16 @@ export default function PaymentFlow({
         // Use previous data or sensible defaults if prev is null
         const base: PaymentFormData = prev || {
           selectedVendor: null,
-          fiatAmount: '',
-          fiatCurrency: '',
-          cryptoAsset: '',
-          cryptoAmount: '',
-          fxRate: 0, // TODO: Revisit this
-          walletAddress: '',
-          network: '',
-          category: '',
-          memo: '',
+          amount: '',
+          currency: '',
           invoiceNumber: '',
           invoiceDate: '',
           dueDate: '',
+          receiverWalletAddress: '',
+          paymentNetwork: '',
+          memo: '',
+          departmentId: '',
+          categoryId: '',
         };
         // Only overwrite fields present in OCR
         return {
@@ -180,16 +170,16 @@ export default function PaymentFlow({
       const walletClient = await primaryWallet.getWalletClient();
 
       // Validate token is enabled
-      if (!isCryptocurrencyEnabled(paymentData.cryptoAsset)) {
-        setPaymentError(`Token transfers for ${paymentData.cryptoAsset} not implemented yet`);
+      if (!isCryptocurrencyEnabled(paymentData.currency)) {
+        setPaymentError(`Token transfers for ${paymentData.currency} not implemented yet`);
         setIsProcessingPayment(false);
         return;
       }
 
       // Get contract address for the network
-      const contractAddress = getTokenContractAddress(paymentData.cryptoAsset, paymentData.network);
+      const contractAddress = getTokenContractAddress(paymentData.currency, paymentData.paymentNetwork);
       if (!contractAddress) {
-        setPaymentError(`${paymentData.cryptoAsset} contract not configured for network: ${paymentData.network}`);
+        setPaymentError(`${paymentData.currency} contract not configured for network: ${paymentData.paymentNetwork}`);
         setIsProcessingPayment(false);
         return;
       }
@@ -201,16 +191,16 @@ export default function PaymentFlow({
       };
 
       // Convert amount to token units
-      const tokenDecimals = getCryptocurrencyDecimals(paymentData.cryptoAsset);
-      const tokenAmount = parseUnits(paymentData.cryptoAmount, tokenDecimals);
+      const tokenDecimals = getCryptocurrencyDecimals(paymentData.currency);
+      const tokenAmount = parseUnits(paymentData.amount, tokenDecimals);
 
       // Get the wallet's current chain ID
       const walletChainId = walletClient.chain?.id;
-      const targetNetwork = getNetwork(paymentData.network);
+      const targetNetwork = getNetwork(paymentData.paymentNetwork);
       
       // Check if wallet is connected to the correct network
       if (!targetNetwork) {
-        setPaymentError(`Unsupported network: ${paymentData.network}`);
+        setPaymentError(`Unsupported network: ${paymentData.paymentNetwork}`);
         setIsProcessingPayment(false);
         return;
       }
@@ -219,7 +209,7 @@ export default function PaymentFlow({
         console.log('Network mismatch detected:', {
           walletChainId,
           targetChainId: targetNetwork.chainId,
-          targetNetwork: paymentData.network
+          targetNetwork: paymentData.paymentNetwork
         });
         setPaymentError(`Please switch your wallet to ${targetNetwork.name} (Chain ID: ${targetNetwork.chainId}) to proceed with the payment.`);
         setIsProcessingPayment(false);
@@ -228,14 +218,14 @@ export default function PaymentFlow({
 
       console.log('Network validation passed:', {
         walletChainId,
-        targetNetwork: paymentData.network
+        targetNetwork: paymentData.paymentNetwork
       });
 
       // Simulate transaction
       const { request } = await publicClient.simulateContract({
         ...contract,
         functionName: 'transfer',
-        args: [paymentData.walletAddress as `0x${string}`, tokenAmount],
+        args: [paymentData.receiverWalletAddress as `0x${string}`, tokenAmount],
         account: primaryWallet.address as `0x${string}`,
       });
 
@@ -245,42 +235,52 @@ export default function PaymentFlow({
       console.log('Transaction sent, hash:', hash);
 
       // Wait for confirmation
-      // TODO: Revisit why waitForTransactionReceipt gives transient BlockNotFound error. Testing on Base Sepolia.
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // TODO: Implement retries with exponential backoff
       const receipt = await publicClient.getTransactionReceipt({ hash });
       console.log('Transaction receipt:', receipt);
 
       // Get block timestamp
       const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
-      const confirmedAt = new Date(Number(block.timestamp) * 1000);
-      console.log('Block timestamp:', confirmedAt);
+      const paidAt = new Date(Number(block.timestamp) * 1000);
+      setPaidAt(paidAt);
+      console.log('Block timestamp:', paidAt);
 
       // Validate amount conversions
-      const fiatAmountNum = parseFloat(paymentData.fiatAmount);
-      const cryptoAmountNum = parseFloat(paymentData.cryptoAmount);
+      const amountNum = parseFloat(paymentData.amount);
       
-      if (isNaN(fiatAmountNum) || isNaN(cryptoAmountNum)) {
+      if (isNaN(amountNum)) {
         throw new Error('Invalid amount format - amounts must be valid numbers');
       }
       
-      if (fiatAmountNum <= 0 || cryptoAmountNum <= 0) {
+      if (amountNum <= 0) {
         throw new Error('Invalid amount - amounts must be greater than zero');
       }
 
       // Record payment in database
-      const paymentRecord: PaymentCreationPayload = {
+      const paymentDataToSubmit = {
         vendor_id: selectedVendor.id,
         invoice_id: invoice?.id || null,
-        fiat_amount: fiatAmountNum,
-        fiat_currency: paymentData.fiatCurrency,
-        crypto_asset: paymentData.cryptoAsset,
-        crypto_amount: cryptoAmountNum,
-        fx_rate: paymentData.fxRate,
-        payment_network: paymentData.network,
+        invoice_number: paymentData.invoiceNumber?.trim() || null,
+        invoice_date: paymentData.invoiceDate? new Date(paymentData.invoiceDate).toISOString() : null,
+        due_date: paymentData.dueDate? new Date(paymentData.dueDate).toISOString() : null,
+        amount: amountNum,
+        currency: paymentData.currency,
         sender_wallet_address: primaryWallet.address,
-        receiver_wallet_address: paymentData.walletAddress,
+        receiver_wallet_address: paymentData.receiverWalletAddress,
+        payment_network: paymentData.paymentNetwork,
         tx_hash: hash,
-        confirmed_at: confirmedAt.toISOString(),
+        paid_date: paidAt.toISOString(),
+        memo: paymentData.memo?.trim() || null,
+        category_id: paymentData.categoryId?.trim() || null,
+        department_id: paymentData.departmentId?.trim() || null,
       };
+      console.log('Payment data to submit:', paymentDataToSubmit);
+      const parsedPayment = createPaymentInputSchema.safeParse(paymentDataToSubmit);
+
+      if (!parsedPayment.success) {
+        alert(parsedPayment.error.message);
+        return;
+      }
 
       const response = await fetch('/api/payments', {
         method: 'POST',
@@ -288,7 +288,7 @@ export default function PaymentFlow({
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(paymentRecord),
+        body: JSON.stringify(parsedPayment.data),
       });
 
       if (!response.ok) {
@@ -314,7 +314,7 @@ export default function PaymentFlow({
         
         // Handle specific contract errors
         if (errorText.includes('transfer amount exceeds balance')) {
-          errorMessage = `Insufficient ${paymentData.cryptoAsset} balance in your wallet. Please add more funds and try again.`;
+          errorMessage = `Insufficient ${paymentData.currency} balance in your wallet. Please add more funds and try again.`;
         } else if (errorText.includes('ERC20: transfer to the zero address')) {
           errorMessage = 'Invalid recipient address. Please check the wallet address and try again.';
         } else if (errorText.includes('ERC20: approve to the zero address')) {
@@ -409,20 +409,19 @@ export default function PaymentFlow({
             />
           )}
           
-          {showConfirmation && !showCompleted && paymentData && (
+          {showConfirmation && !showCompleted && paymentData && paymentData.selectedVendor && (
             <ConfirmPayment
               selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
-              memo={paymentData.memo}
-              category={paymentData.category}
               invoiceNumber={paymentData.invoiceNumber}
               invoiceDate={paymentData.invoiceDate}
               dueDate={paymentData.dueDate}
+              amount={paymentData.amount}
+              currency={paymentData.currency}
+              receiverWalletAddress={paymentData.receiverWalletAddress}
+              paymentNetwork={paymentData.paymentNetwork}
+              memo={paymentData.memo}
+              departmentId={paymentData.departmentId}
+              categoryId={paymentData.categoryId}
               onBack={handleBack}
               onConfirm={handleConfirmPayment}
               isProcessingPayment={isProcessingPayment}
@@ -432,15 +431,14 @@ export default function PaymentFlow({
             />
           )}
 
-          {showCompleted && paymentData && txHash && (
+          {showCompleted && paymentData && txHash && paymentData.selectedVendor && (
             <CompletedPayment
               selectedVendor={paymentData.selectedVendor}
-              fiatAmount={paymentData.fiatAmount}
-              fiatCurrency={paymentData.fiatCurrency}
-              cryptoAsset={paymentData.cryptoAsset}
-              cryptoAmount={paymentData.cryptoAmount}
-              walletAddress={paymentData.walletAddress}
-              network={paymentData.network}
+              amount={paymentData.amount}
+              currency={paymentData.currency}
+              receiverWalletAddress={paymentData.receiverWalletAddress}
+              paymentNetwork={paymentData.paymentNetwork}
+              paidAt={paidAt}
               txHash={txHash}
               onClose={handleClose}
             />

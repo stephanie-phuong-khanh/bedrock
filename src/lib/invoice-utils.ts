@@ -1,11 +1,11 @@
-import { InvoiceWithFileUrl } from '@/types/supabase';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 
 /**
  * Uploads an invoice file to Supabase storage using the API route with service role
  * @param file The file to upload
  * @returns The created invoice record with fileUrl or null if upload failed
  */
-export async function uploadInvoice(file: File): Promise<InvoiceWithFileUrl | null> {
+export async function uploadInvoice(file: File): Promise<InvoiceWithSignedUrl | null> {
   try {
     // Create form data for the API request
     const formData = new FormData();

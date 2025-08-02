@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { InvoiceWithFileUrl } from '@/types/supabase';
+import { InvoiceWithSignedUrl } from '@/types/db-types';
 
 interface InvoicePanelProps {
-  invoice?: InvoiceWithFileUrl | null;
+  invoice?: InvoiceWithSignedUrl | null;
   isUploading?: boolean;
   onUploadInvoice?: (file: File) => Promise<void>;
   onDelete?: (invoiceId: string) => Promise<void>;
@@ -28,11 +28,11 @@ export default function InvoicePanel({
   
   // Determine if the file is a PDF based on file_path
   useEffect(() => {
-    if (invoice && invoice.file_path) {
+    if (invoice && invoice.signedUrl) {
       const isPdfFile = 
-        invoice.file_path.toLowerCase().endsWith('.pdf') || 
-        invoice.file_path.toLowerCase().includes('.pdf') ||
-        invoice.file_path.toLowerCase().includes('application/pdf');
+        invoice.signedUrl.toLowerCase().endsWith('.pdf') || 
+        invoice.signedUrl.toLowerCase().includes('.pdf') ||
+        invoice.signedUrl.toLowerCase().includes('application/pdf');
       
       setIsPdf(isPdfFile);
     }
@@ -134,14 +134,14 @@ export default function InvoicePanel({
             {isPdf ? (
               <div className="w-full h-full">
                 <object
-                  data={invoice.fileUrl}
+                  data={invoice.signedUrl}
                   type="application/pdf"
                   className="w-full h-full rounded"
                 >
                   <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">
                     <p className="text-gray-600 mb-4">PDF preview not available in this browser.</p>
                     <a 
-                      href={invoice.fileUrl} 
+                      href={invoice.signedUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -155,7 +155,7 @@ export default function InvoicePanel({
               <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded">
                 <p className="text-gray-600 mb-4">This file type is not supported for preview.</p>
                 <a 
-                  href={invoice.fileUrl} 
+                  href={invoice.signedUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

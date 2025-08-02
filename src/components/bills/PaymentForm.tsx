@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { isAddress } from 'viem';
 import { Vendor } from '@/types/db-types';
-import { getEnabledCryptocurrencies, getEnabledFiatCurrencies, getEnabledNetworks } from '@/constants/crypto';
+import { getEnabledCryptocurrencies, getEnabledNetworks } from '@/constants/crypto';
 import { FormSection, FormInput, FormSelect, FormButtons, FormDateInput, CurrencySelect, NetworkSelect } from '@/components/forms';
 import Button from '@/components/dashboard/Button';
 import { useUserSession } from "@/context/UserSessionContext";
+import { createVendorSchema } from '@/types/zod';
 
 interface PaymentFormProps {
   vendors: Vendor[];
@@ -20,19 +21,17 @@ interface PaymentFormProps {
 }
 
 export interface PaymentFormData {
-  selectedVendor: Vendor | null;
-  fiatAmount: string;
-  fiatCurrency: string;
-  cryptoAsset: string;
-  cryptoAmount: string;
-  fxRate: number;
-  walletAddress: string;
-  network: string;
-  category: string;
-  memo: string;
-  invoiceNumber: string;
-  invoiceDate: string;
-  dueDate: string;
+  selectedVendor?: Vendor | null;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  amount: string;
+  currency: string;
+  receiverWalletAddress: string;
+  paymentNetwork: string;
+  memo?: string;
+  departmentId?: string;
+  categoryId?: string;
 }
 
 export default function PaymentForm({ 
@@ -47,16 +46,18 @@ export default function PaymentForm({
 }: PaymentFormProps) {
   const { session } = useUserSession();
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(initialSelectedVendor || null);
-  const [fiatAmount, setFiatAmount] = useState<string>(initialFormData?.fiatAmount || '0');
-  const [fiatCurrency, setFiatCurrency] = useState<string>(initialFormData?.fiatCurrency || '');
-  const [cryptoAsset, setCryptoAsset] = useState<string>(initialFormData?.cryptoAsset || '');
-  const [walletAddress, setWalletAddress] = useState<string>(initialFormData?.walletAddress || '');
-  const [network, setNetwork] = useState<string>(initialFormData?.network || '');
-  const [category, setCategory] = useState<string>(initialFormData?.category || '');
-  const [memo, setMemo] = useState<string>(initialFormData?.memo || '');
   const [invoiceNumber, setInvoiceNumber] = useState<string>(initialFormData?.invoiceNumber || '');
   const [invoiceDate, setInvoiceDate] = useState<string>(initialFormData?.invoiceDate || '');
   const [dueDate, setDueDate] = useState<string>(initialFormData?.dueDate || '');
+  const [amount, setAmount] = useState<string>(initialFormData?.amount || '0');
+  const [currency, setCurrency] = useState<string>(initialFormData?.currency || '');
+  const [receiverWalletAddress, setReceiverWalletAddress] = useState<string>(initialFormData?.receiverWalletAddress || '');
+  const [paymentNetwork, setPaymentNetwork] = useState<string>(initialFormData?.paymentNetwork || '');
+  const [memo, setMemo] = useState<string>(initialFormData?.memo || '');
+  const [categoryId, setCategoryId] = useState<string>(initialFormData?.categoryId || '');
+  const [departmentId, setDepartmentId] = useState<string>(initialFormData?.departmentId || '');
+
+  // Validation state
   const [isAddressValid, setIsAddressValid] = useState<boolean | null>(null);
 
   // Vendor creation form state
@@ -64,13 +65,6 @@ export default function PaymentForm({
   const [newVendorName, setNewVendorName] = useState<string>('');
   const [newVendorEmail, setNewVendorEmail] = useState<string>('');
   const [isCreatingVendor, setIsCreatingVendor] = useState<boolean>(false);
-
-  // Initialize wallet address validation if initial data is provided
-  useEffect(() => {
-    if (initialFormData?.walletAddress) {
-      validateWalletAddress(initialFormData.walletAddress);
-    }
-  }, [initialFormData?.walletAddress]);
 
   // Update selectedVendor when prop changes
   useEffect(() => {
@@ -87,12 +81,10 @@ export default function PaymentForm({
   useEffect(() => {
     if (initialFormData) {
       setSelectedVendor(initialFormData.selectedVendor || null);
-      setFiatAmount(initialFormData.fiatAmount || '0');
-      setFiatCurrency(initialFormData.fiatCurrency || '');
-      setCryptoAsset(initialFormData.cryptoAsset || '');
-      setWalletAddress(initialFormData.walletAddress || '');
-      setNetwork(initialFormData.network || '');
-      setCategory(initialFormData.category || '');
+      setAmount(initialFormData.amount || '0');
+      setCurrency(initialFormData.currency || '');
+      setReceiverWalletAddress(initialFormData.receiverWalletAddress || '');
+      setPaymentNetwork(initialFormData.paymentNetwork || '');
       setMemo(initialFormData.memo || '');
       setInvoiceNumber(initialFormData.invoiceNumber || '');
       setInvoiceDate(initialFormData.invoiceDate || '');
@@ -115,16 +107,16 @@ export default function PaymentForm({
   // Handle wallet address change
   const handleWalletAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setWalletAddress(value);
+    setReceiverWalletAddress(value);
     validateWalletAddress(value);
   };
 
   // Check if all required fields are filled
   const isFormComplete = selectedVendor && 
-    parseFloat(fiatAmount) > 0 && 
-    fiatCurrency !== '' && 
-    walletAddress.trim() !== '' && 
-    network !== '' && 
+    parseFloat(amount) > 0 && 
+    currency !== '' && 
+    receiverWalletAddress.trim() !== '' && 
+    paymentNetwork !== '' && 
     isAddressValid === true;
 
   const handleVendorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -154,8 +146,15 @@ export default function PaymentForm({
 
   // Handle creating new vendor
   const handleCreateVendor = async () => {
-    if (!newVendorName.trim() || !newVendorEmail.trim()) {
-      alert('Please fill in both name and email fields');
+    const vendorPayload = {
+      name: newVendorName.trim(),
+      email: newVendorEmail.trim(),
+    };
+
+    const createVendorParsed = createVendorSchema.safeParse(vendorPayload);
+
+    if (!createVendorParsed.success) {
+      alert(createVendorParsed.error.message);
       return;
     }
 
@@ -167,10 +166,7 @@ export default function PaymentForm({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: newVendorName.trim(),
-          email: newVendorEmail.trim(),
-        }),
+        body: JSON.stringify(createVendorParsed.data),
       });
 
       if (!response.ok) {
@@ -205,22 +201,22 @@ export default function PaymentForm({
       return;
     }
     
-    if (!fiatAmount) {
+    if (!amount) {
       alert('Please enter an amount');
       return;
     }
     
-    if (!fiatCurrency) {
+    if (!currency) {
       alert('Please select a currency');
       return;
     }
     
-    if (!walletAddress.trim()) {
+    if (!receiverWalletAddress.trim()) {
       alert('Please enter a wallet address');
       return;
     }
     
-    if (!network) {
+    if (!paymentNetwork) {
       alert('Please select a payment network');
       return;
     }
@@ -231,21 +227,18 @@ export default function PaymentForm({
     }
     
     // If all validations pass, call onSubmit with form data
-    // TODO: Revisit `cryptoAsset` and `fxRate` once more fiat currencies and crypto assets are supported beyond USD and USDC respectively.
     onSubmit({
       selectedVendor,
-      fiatAmount,
-      fiatCurrency,
-      cryptoAsset,
-      cryptoAmount: fiatAmount, // Same as fiat_amount for USD:USDC parity
-      fxRate: 1.00, // Hardcoded USD:USDC parity
-      walletAddress,
-      network,
-      category,
-      memo,
       invoiceNumber,
       invoiceDate,
-      dueDate
+      dueDate,
+      amount,
+      currency,
+      receiverWalletAddress,
+      paymentNetwork,
+      memo,
+      departmentId,
+      categoryId,
     });
   };
 
@@ -379,20 +372,20 @@ export default function PaymentForm({
           <div className="grid grid-cols-2 gap-4">
             <FormInput
               label="Amount"
-              id="fiat_amount"
-              value={fiatAmount}
+              id="amount"
+              value={amount}
               onChange={(e) => {
                 const rawValue = e.target.value;
                 // Allow digits + optional dot + up to 2 decimal digits
                 if (/^\d*\.?\d{0,2}$/.test(rawValue)) {
-                  setFiatAmount(rawValue);
+                  setAmount(rawValue);
                 }
               }}
               onBlur={() => {
-                if (fiatAmount !== '') {
-                  const num = parseFloat(fiatAmount);
+                if (amount !== '') {
+                  const num = parseFloat(amount);
                   if (!isNaN(num)) {
-                    setFiatAmount(num.toFixed(2));  // Ensures 2 decimal places
+                    setAmount(num.toFixed(2));  // Ensures 2 decimal places
                   }
                 }
               }}
@@ -402,16 +395,15 @@ export default function PaymentForm({
             
             <CurrencySelect
               label="Currency"
-              id="fiat_currency"
-              value={fiatCurrency}
-              onChange={(e) => setFiatCurrency(e.target.value)}
-              options={Object.values(getEnabledFiatCurrencies()).map(fiat => ({
-                symbol: fiat.symbol,
-                name: fiat.name,
-                flag: fiat.symbol === 'USD' ? '🇺🇸' : undefined,
-                isEnabled: fiat.isEnabled
+              id="currency"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              options={Object.values(getEnabledCryptocurrencies()).map(crypto => ({
+                symbol: crypto.symbol,
+                name: crypto.name,
+                isEnabled: crypto.isEnabled
               }))}
-              placeholder="Select"
+              placeholder="Select a currency"
               required
             />
           </div>
@@ -419,76 +411,59 @@ export default function PaymentForm({
           
           <FormInput
             label="Pay to"
-            id="wallet-address"
-            value={walletAddress}
+            id="receiver-wallet-address"
+            value={receiverWalletAddress}
             onChange={handleWalletAddressChange}
-            placeholder="Add wallet address"
+            placeholder="Add receiver wallet address"
             required
             error={isAddressValid === false ? "Please enter a valid EVM wallet address" : undefined}
           />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <CurrencySelect
-              label="Asset"
-              id="crypto_asset"
-              value={cryptoAsset}
-              onChange={(e) => setCryptoAsset(e.target.value)}
-              options={Object.values(getEnabledCryptocurrencies()).map(crypto => ({
-                symbol: crypto.symbol,
-                name: crypto.name,
-                flag: crypto.symbol === 'USDC' ? '💰' : undefined,
-                isEnabled: crypto.isEnabled
-              }))}
-              placeholder="Select"
-              required
-            />
-            
-            <NetworkSelect
-              label="Network"
-              id="network"
-              value={network}
-              onChange={(e) => setNetwork(e.target.value)}
-              options={getEnabledNetworks(session?.user?.email ? { email: session.user.email } : undefined).map(network => ({
-                id: network.id,
-                name: network.name,
-                chainId: network.chainId,
-              }))}
-              placeholder="Select"
-              required
-            />
-          </div>
+
+          <NetworkSelect
+            label="Payment Network"
+            id="payment-network"
+            value={paymentNetwork}
+            onChange={(e) => setPaymentNetwork(e.target.value)}
+            options={getEnabledNetworks(session?.user?.email ? { email: session.user.email } : undefined).map(network => ({
+              id: network.id,
+              name: network.name,
+              chainId: network.chainId,
+            }))}
+            placeholder="Select a network"
+            required
+          />
         </FormSection>
         
         <FormSection title="Details">
+          <FormInput
+            label="Memo"
+            id="memo"
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="Add memo"
+          />
+
           <FormSelect
             label="Category"
             id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
             options={[
-              { value: "Professional Services", label: "Professional Services" },
-              { value: "Software & SaaS", label: "Software & SaaS" },
-              { value: "Marketing & Advertising", label: "Marketing & Advertising" },
-              { value: "Utilities", label: "Utilities" },
-              { value: "Office Supplies", label: "Office Supplies" },
-              { value: "Other", label: "Other" }
+              /* TODO: fetch categories from API */
             ]}
-            placeholder="Select"
+            placeholder="Select a category"
           />
-          
-          <div>
-            <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-2">
-              Memo
-            </label>
-            <textarea
-              id="memo"
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-              rows={3}
-              placeholder="Add memo"
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-            />
-          </div>
+
+          <FormSelect
+            label="Department"
+            id="department"
+            value={departmentId}
+            onChange={(e) => setDepartmentId(e.target.value)}
+            options={[
+              /* TODO: fetch departments from API */
+            ]}
+            placeholder="Select a department"
+          />
         </FormSection>
         
         <FormButtons

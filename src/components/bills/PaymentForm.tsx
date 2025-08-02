@@ -440,7 +440,7 @@ export default function PaymentForm({
           />
 
           <NetworkSelect
-            label="Payment Network"
+            label="Network"
             id="payment-network"
             value={paymentNetwork}
             onChange={(e) => setPaymentNetwork(e.target.value)}

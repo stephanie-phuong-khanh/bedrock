@@ -188,7 +188,7 @@ export default function ConfirmPayment({
         </div>
 
         <div className="cursor-not-allowed">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Payment Network</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Network</label>
           <input
             type="text"
             value={getPaymentNetworkNameFromId(paymentNetwork)}

@@ -85,7 +85,7 @@ export default function CompletedPayment({
 
         {/* Payment Network */}
         <FormInput
-          label="Payment Network"
+          label="Network"
           id="payment-network"
           value={networkInfo?.name || paymentNetwork}
           onChange={() => {}} // No-op for read-only

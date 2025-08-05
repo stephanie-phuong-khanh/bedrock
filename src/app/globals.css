@@ -7,8 +7,8 @@
 }
 
 @theme inline {
-  /* Colors - Based on Figma palette */
-  --color-primary: #0D1D3C;
+  /* Colors */
+  --color-primary: #0D1D3C; /* Navy */
   --color-primary-hover: #153065;
   --color-primary-light: #F5F5FF;
   --color-secondary: #153065;
@@ -137,7 +137,7 @@
 
 body {
   background: var(--color-background);
-  color: var(--color-foreground);
+  color: var(--color-primary);
   font-family: var(--font-sans);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
@@ -150,7 +150,7 @@ body {
   font-size: var(--font-size-5xl);
   font-weight: var(--font-weight-medium);
   line-height: var(--line-height-tight);
-  color: var(--color-foreground);
+  color: var(--color-primary);
 }
 
 .text-section-header {
@@ -166,7 +166,7 @@ body {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-normal);
   line-height: var(--line-height-normal);
-  color: var(--color-foreground);
+  color: var(--color-primary);
 }
 
 /* Button Base Styles */

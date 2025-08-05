@@ -1,0 +1,9 @@
+DO $$ BEGIN
+  CREATE TYPE payment_status AS ENUM ('PENDING', 'SUBMITTED', 'CONFIRMED', 'FAILED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+
+ALTER TABLE payments
+ADD COLUMN status payment_status NOT NULL DEFAULT 'PENDING';

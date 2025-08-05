@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SUPPORTED_CURRENCY_SYMBOLS, SUPPORTED_NETWORK_IDS } from "@/constants/crypto";
 
 export const createUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -45,20 +46,22 @@ export const insertPaymentSchema = z.object({
   invoice_date: z.string().datetime().nullable().optional(),
   due_date: z.string().datetime().nullable().optional(),
   amount: z.number(),
-  currency: z.enum(['USDC']),
+  currency: z.enum(SUPPORTED_CURRENCY_SYMBOLS),
   sender_wallet_address: z.string().max(255),
   receiver_wallet_address: z.string().max(255),
-  payment_network: z.enum(['ethereum', 'base', 'arbitrum', 'optimism', 'polygon', 'avalanche', 'base-sepolia']),
+  payment_network: z.enum(SUPPORTED_NETWORK_IDS),
   tx_hash: z.string().max(255).nullable().optional(),
   paid_date: z.string().datetime().nullable().optional(),
   memo: z.string().nullable().optional(),
   category_id: z.string().uuid().nullable().optional(),
   department_id: z.string().uuid().nullable().optional(),
+  status: z.enum(['PENDING', 'SUBMITTED', 'CONFIRMED', 'FAILED']).default('PENDING'),
 });
 export const createPaymentInputSchema = insertPaymentSchema.omit({
   user_id: true,
   supabase_uid: true,
 });
+export type CreatePaymentInput = z.infer<typeof createPaymentInputSchema>;
 export const updatePaymentSchema = insertPaymentSchema.partial();
 export const paymentSchema = insertPaymentSchema.extend({
   id: z.string().uuid(),

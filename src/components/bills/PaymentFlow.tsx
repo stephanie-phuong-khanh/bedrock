@@ -88,6 +88,7 @@ export default function PaymentFlow({
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [paidAt, setPaidAt] = useState<Date | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   
   // Fetch vendors function (reusable)
   const fetchVendors = async () => {
@@ -209,7 +210,7 @@ export default function PaymentFlow({
   const waitForReceipt = async (
     publicClient: PublicClient,
     txHash: `0x${string}`,
-    maxAttempts = 7,
+    maxAttempts = 5,
     delayMs = 1000
   ) => {
     let attempts = 0;
@@ -237,7 +238,7 @@ export default function PaymentFlow({
   const waitForBlock = async (
     client: PublicClient,
     blockHash: `0x${string}`,
-    maxAttempts = 7,
+    maxAttempts = 5,
     delayMs = 1000
   ) => {
     let attempts = 0;
@@ -245,7 +246,7 @@ export default function PaymentFlow({
 
     while (attempts < maxAttempts) {
       try {
-        const block = await client.getBlock({ blockHash });
+        const block = await client.getBlock({ blockHash: blockHash });
         return block;
       } catch (err: unknown) {
         // Only retry if it's specifically BlockNotFoundError
@@ -412,6 +413,7 @@ export default function PaymentFlow({
       const data = await response.json();
       console.log('Pending payment record created');
       paymentId = data.id;
+      setPaymentStatus('PENDING');
     } catch (error: unknown) {
       console.error('Error recording payment:', error);
       setPaymentError(`Failed to record payment: ${error}`);
@@ -431,6 +433,7 @@ export default function PaymentFlow({
         body: JSON.stringify({ status: 'FAILED' }),
         headers: { 'Content-Type': 'application/json' },
       });
+      setPaymentStatus('FAILED');
       console.error('Failed to send transaction:', error);
       setPaymentError(`Failed to send transaction: ${formatTxnError(error, paymentData.currency)}\nPlease check your wallet to confirm whether it was sent.`);
       setIsProcessingPayment(false);
@@ -452,6 +455,7 @@ export default function PaymentFlow({
       setIsProcessingPayment(false);
       return;
     }
+    setPaymentStatus('SUBMITTED');
 
     // Confirm transaction
     try {
@@ -478,12 +482,14 @@ export default function PaymentFlow({
       if (!updateResponse.ok) {
         const errorData = await updateResponse.json();
         setPaymentError("Failed to update payment status to \"confirmed\". Please check your wallet to confirm whether it was sent.");
-        console.error('Failed to update payment record status to CONFIRMED', updateResponse);
+        console.error('Failed to update payment record status to confirmed', updateResponse);
         throw new Error(errorData.error || "Failed to update payment status to confirmed");
       }
+      setPaymentStatus('CONFIRMED');
     } catch (error: unknown) {
       console.error('Error confirming transaction:', error);
       setPaymentError('Transaction was submitted, but failed to confirm. Please check your wallet to confirm whether it was sent.');
+      setShowCompleted(true);
       setIsProcessingPayment(false);
       return;
     }
@@ -603,6 +609,7 @@ export default function PaymentFlow({
               paidAt={paidAt}
               txHash={txHash}
               onClose={handleClose}
+              paymentStatus={paymentStatus}
             />
           )}
         </div>

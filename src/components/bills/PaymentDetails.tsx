@@ -177,7 +177,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 <label className="block text-sm font-medium text-gray-700 mb-2">Paid to</label>
                 <input
                   type="text"
-                  value={payment.receiver_wallet_address || '0xC54BA68e29bb591f072DD84dca9327206FfAFb5a'}
+                  value={payment.receiver_wallet_address || 'N/A'}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
                   readOnly
@@ -188,7 +188,7 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
                 <label className="block text-sm font-medium text-gray-700 mb-2">Paid from</label>
                 <input
                   type="text"
-                  value={payment.sender_wallet_address || '(Blank)'}
+                  value={payment.sender_wallet_address || 'N/A'}
                   disabled
                   className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed font-mono text-sm"
                   readOnly

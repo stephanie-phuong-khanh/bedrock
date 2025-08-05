@@ -179,7 +179,7 @@ export default function ConfirmPayment({
         
         <div className="cursor-not-allowed">
           <label className="block text-sm font-medium text-gray-700 mb-2">Pay to</label>
-          <div className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 font-mono text-sm cursor-not-allowed">
+          <div className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 font-mono text-sm cursor-not-allowed overflow-hidden text-ellipsis">
             {/* Format full address with bold segments */}
             <span className="font-bold">{receiverWalletAddress.slice(0, 6)}</span>
             {receiverWalletAddress.slice(6, -4)}
@@ -200,14 +200,16 @@ export default function ConfirmPayment({
 
         {/* Pay from */}
         {primaryWallet && (
-          <div>
+          <div className="cursor-pointer">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Pay from
             </label>
             <div className="relative">
-              <div className="flex items-center justify-between px-3 py-2.5 border border-gray-300 rounded-lg bg-purple-50">
+              <div
+                className="flex items-center justify-between px-3 py-2.5 border border-gray-300 rounded-lg bg-purple-50 overflow-hidden text-ellipsis cursor-pointer hover:bg-gray-50"
+                onClick={() => setShowWalletModal(true)}
+              >
                 <div className="flex items-center space-x-2">
-                  <div className="w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center" />
                   <span className="text-sm font-medium text-gray-900 font-mono">
                     {/* Format full address with bold segments */}
                     <span className="font-bold">{primaryWallet.address.slice(0, 6)}</span>
@@ -215,21 +217,6 @@ export default function ConfirmPayment({
                     <span className="font-bold">{primaryWallet.address.slice(-4)}</span>
                   </span>
                 </div>
-                <button
-                  onClick={() => setShowWalletModal(true)}
-                  disabled={isProcessingPayment || paymentSuccess}
-                  className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-4 w-4" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button>
               </div>
             </div>
           </div>

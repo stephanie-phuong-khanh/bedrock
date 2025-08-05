@@ -97,6 +97,11 @@ export default function PaymentForm({
       setInvoiceDate(initialFormData.invoiceDate || '');
       setDueDate(initialFormData.dueDate || '');
       setSelectedCategory(initialFormData.selectedCategory || null);
+      
+      // Validate the wallet address if it exists
+      if (initialFormData.receiverWalletAddress) {
+        validateWalletAddress(initialFormData.receiverWalletAddress);
+      }
     }
   }, [initialFormData]);
 

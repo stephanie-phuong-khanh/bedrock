@@ -31,10 +31,10 @@ interface PaymentFlowProps {
 }
 
 function formatTxnError(error: unknown, currency?: string): string {
-  let errorMessage = 'An unexpected error occurred.';
+  let errorMessage = 'Payment failed';
 
-  if (typeof error === 'object' && error !== null) {
-    const errorText = JSON.stringify(error).toLowerCase();
+  if (error instanceof Error) {
+    const errorText = error.message;
 
     if (errorText.includes('transfer amount exceeds balance')) {
       errorMessage = `Insufficient ${currency || 'token'} balance in your wallet. Please add more funds and try again.`;
@@ -206,27 +206,61 @@ export default function PaymentFlow({
     setShowConfirmation(true);
   };
 
-  const waitForReceipt = async (publicClient: PublicClient, txHash: `0x${string}`, maxAttempts = 10) => {
+  const waitForReceipt = async (
+    publicClient: PublicClient,
+    txHash: `0x${string}`,
+    maxAttempts = 7,
+    delayMs = 1000
+  ) => {
     let attempts = 0;
-    let delay = 1000;
+    let delay = delayMs;
   
     while (attempts < maxAttempts) {
       try {
         const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
         return receipt;
       } catch (err: unknown) {
-        if ((err as Error).message.includes('not found')) {
-          console.error('Error object:', err);
+        const errorStr = JSON.stringify(err);
+        if (errorStr.includes("not found")) {
+          console.error(`Transaction receipt not found for hash ${txHash}, attempt ${attempts + 1}:`, errorStr);
           await new Promise(res => setTimeout(res, delay));
           attempts++;
           delay *= 2; // exponential backoff
         } else {
-          console.error('Error object (thrown):', err);
           throw err; // rethrow unexpected errors
         }
       }
     }
     throw new Error('Transaction receipt not found after max retries');
+  };
+
+  const waitForBlock = async (
+    client: PublicClient,
+    blockHash: `0x${string}`,
+    maxAttempts = 7,
+    delayMs = 1000
+  ) => {
+    let attempts = 0;
+    let delay = delayMs;
+
+    while (attempts < maxAttempts) {
+      try {
+        const block = await client.getBlock({ blockHash });
+        return block;
+      } catch (err: unknown) {
+        // Only retry if it's specifically BlockNotFoundError
+        const errorStr = JSON.stringify(err);
+        if (errorStr.includes("BlockNotFoundError")) {
+          console.warn(`Block not found for hash ${blockHash}, attempt ${attempts + 1}:`, errorStr);
+          await new Promise((res) => setTimeout(res, delay));
+          attempts++;
+          delay *= 2; // exponential backoff
+        } else {
+          throw err; // rethrow unexpected errors
+        }
+      }
+    }
+    throw new Error(`Block with hash ${blockHash} not found after ${maxAttempts} attempts`);
   };
 
   const handleConfirmPayment = async () => {
@@ -422,9 +456,14 @@ export default function PaymentFlow({
     // Confirm transaction
     try {
       const receipt = await waitForReceipt(publicClient, hash);
-      const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
+      console.log('Transaction receipt retrieved:', receipt);
+
+      const block = await waitForBlock(publicClient, receipt.blockHash);
+      console.log('Block retrieved:', block);
+
       const paidAt = new Date(Number(block.timestamp) * 1000);
       setPaidAt(paidAt);
+      console.log('Payment confirmed at', paidAt);
 
       // Update payment record with paidAt and CONFIRMED status
       const updateResponse = await fetch(`/api/payments/${paymentId}`, {
@@ -438,12 +477,13 @@ export default function PaymentFlow({
       });
       if (!updateResponse.ok) {
         const errorData = await updateResponse.json();
+        setPaymentError("Failed to update payment status to \"confirmed\". Please check your wallet to confirm whether it was sent.");
         console.error('Failed to update payment record status to CONFIRMED', updateResponse);
-        throw new Error(errorData.error || "Failed to update payment");
+        throw new Error(errorData.error || "Failed to update payment status to confirmed");
       }
     } catch (error: unknown) {
       console.error('Error confirming transaction:', error);
-      setPaymentError(`Transaction was submitted, but failed to confirm: ${formatTxnError(error, paymentData.currency)}\nPlease check your wallet to confirm whether it was sent.`);
+      setPaymentError('Transaction was submitted, but failed to confirm. Please check your wallet to confirm whether it was sent.');
       setIsProcessingPayment(false);
       return;
     }

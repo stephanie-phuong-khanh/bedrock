@@ -139,6 +139,7 @@ export type Database = {
           payment_network: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address: string
           sender_wallet_address: string
+          status: Database["public"]["Enums"]["payment_status"]
           supabase_uid: string
           tx_hash: string | null
           updated_at: string
@@ -161,6 +162,7 @@ export type Database = {
           payment_network: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address: string
           sender_wallet_address: string
+          status?: Database["public"]["Enums"]["payment_status"]
           supabase_uid: string
           tx_hash?: string | null
           updated_at?: string
@@ -183,6 +185,7 @@ export type Database = {
           payment_network?: Database["public"]["Enums"]["payment_network"]
           receiver_wallet_address?: string
           sender_wallet_address?: string
+          status?: Database["public"]["Enums"]["payment_status"]
           supabase_uid?: string
           tx_hash?: string | null
           updated_at?: string
@@ -318,6 +321,7 @@ export type Database = {
         | "polygon"
         | "avalanche"
         | "base-sepolia"
+      payment_status: "PENDING" | "SUBMITTED" | "CONFIRMED" | "FAILED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -455,6 +459,7 @@ export const Constants = {
         "avalanche",
         "base-sepolia",
       ],
+      payment_status: ["PENDING", "SUBMITTED", "CONFIRMED", "FAILED"],
     },
   },
 } as const

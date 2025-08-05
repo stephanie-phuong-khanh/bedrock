@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isEthereumWallet } from '@dynamic-labs/ethereum';
-import { erc20Abi, parseUnits } from 'viem';
-import { createPaymentInputSchema } from '@/types/zod';
+import { erc20Abi, parseUnits, PublicClient, WalletClient, WriteContractParameters } from 'viem';
+import { CreatePaymentInput, createPaymentInputSchema } from '@/types/zod';
 import { InvoiceWithSignedUrl, PaymentCategory } from '@/types/db-types';
 import { Vendor } from '@/types/db-types';
 import InvoicePanel from '@/components/bills/InvoicePanel';
@@ -17,6 +17,8 @@ import {
   isCryptocurrencyEnabled,
   getCryptocurrencyDecimals,
   getNetwork,
+  SupportedCurrency,
+  SupportedNetwork,
 } from '@/constants/crypto';
 
 interface PaymentFlowProps {
@@ -26,6 +28,34 @@ interface PaymentFlowProps {
   onDelete?: (invoiceId: string) => Promise<void>;
   onPaymentSuccess?: () => void;
   initiallyUploadingInvoice?: boolean;
+}
+
+function formatTxnError(error: unknown, currency?: string): string {
+  let errorMessage = 'An unexpected error occurred.';
+
+  if (typeof error === 'object' && error !== null) {
+    const errorText = JSON.stringify(error).toLowerCase();
+
+    if (errorText.includes('transfer amount exceeds balance')) {
+      errorMessage = `Insufficient ${currency || 'token'} balance in your wallet. Please add more funds and try again.`;
+    } else if (errorText.includes('erc20: transfer to the zero address')) {
+      errorMessage = 'Invalid recipient address. Please check the wallet address and try again.';
+    } else if (errorText.includes('erc20: approve to the zero address')) {
+      errorMessage = 'Invalid token approval. Please try again.';
+    } else if (errorText.includes('user rejected the request') || errorText.includes('user rejected transaction')) {
+      errorMessage = 'Transaction was cancelled. Please try again when ready.';
+    } else if (errorText.includes('insufficient funds for gas')) {
+      errorMessage = 'Insufficient ETH for gas fees. Please add ETH to your wallet and try again.';
+    } else if (errorText.includes('nonce too low') || errorText.includes('replacement transaction underpriced')) {
+      errorMessage = 'Transaction conflict detected. Please wait a moment and try again.';
+    } else if (errorText.includes('network')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+    } else {
+      errorMessage = errorText;
+    }
+  }
+
+  return errorMessage;
 }
 
 export default function PaymentFlow({
@@ -176,12 +206,36 @@ export default function PaymentFlow({
     setShowConfirmation(true);
   };
 
+  const waitForReceipt = async (publicClient: PublicClient, txHash: `0x${string}`, maxAttempts = 10) => {
+    let attempts = 0;
+    let delay = 1000;
+  
+    while (attempts < maxAttempts) {
+      try {
+        const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+        return receipt;
+      } catch (err: unknown) {
+        if ((err as Error).message.includes('not found')) {
+          console.error('Error object:', err);
+          await new Promise(res => setTimeout(res, delay));
+          attempts++;
+          delay *= 2; // exponential backoff
+        } else {
+          console.error('Error object (thrown):', err);
+          throw err; // rethrow unexpected errors
+        }
+      }
+    }
+    throw new Error('Transaction receipt not found after max retries');
+  };
+
   const handleConfirmPayment = async () => {
     // Reset states at the beginning of each attempt
     setIsProcessingPayment(true);
     setPaymentError(null);
     setPaymentSuccess(false);
 
+    // Static validation of payment data
     if (!paymentData || !selectedVendor || !primaryWallet) {
       setPaymentError('Missing payment data or wallet connection');
       setIsProcessingPayment(false);
@@ -194,178 +248,210 @@ export default function PaymentFlow({
       return;
     }
 
+    // Validate token is enabled
+    if (!isCryptocurrencyEnabled(paymentData.currency)) {
+      setPaymentError(`Token transfers for ${paymentData.currency} not implemented yet`);
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    // Get contract address for the network
+    const contractAddress = getTokenContractAddress(paymentData.currency, paymentData.paymentNetwork);
+    if (!contractAddress) {
+      setPaymentError(`${paymentData.currency} contract not configured for network: ${paymentData.paymentNetwork}`);
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    // Validate amount conversions
+    const amountNum = parseFloat(paymentData.amount);
+    if (isNaN(amountNum)) {
+      setPaymentError('Invalid amount format - amounts must be valid numbers');
+      setIsProcessingPayment(false);
+      return;
+    }
+    if (amountNum <= 0) {
+      setPaymentError('Invalid amount - amounts must be greater than zero');
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    const contract = { address: contractAddress, abi: erc20Abi };
+    const tokenDecimals = getCryptocurrencyDecimals(paymentData.currency);
+    const tokenAmount = parseUnits(paymentData.amount, tokenDecimals);
+    const targetNetwork = getNetwork(paymentData.paymentNetwork);
+
+    if (!targetNetwork) {
+      setPaymentError(`Unsupported network: ${paymentData.paymentNetwork}`);
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    let publicClient: PublicClient;
+    let walletClient: WalletClient;
     try {
-      const publicClient = await primaryWallet.getPublicClient();
-      const walletClient = await primaryWallet.getWalletClient();
+      publicClient = await primaryWallet.getPublicClient();
+      walletClient = await primaryWallet.getWalletClient();
+    } catch (error: unknown) {
+      console.error('Error getting wallet client:', error);
+      setPaymentError(`Failed to get wallet client: ${error}`);
+      setIsProcessingPayment(false);
+      return;
+    }
 
-      // Validate token is enabled
-      if (!isCryptocurrencyEnabled(paymentData.currency)) {
-        setPaymentError(`Token transfers for ${paymentData.currency} not implemented yet`);
-        setIsProcessingPayment(false);
-        return;
-      }
+    const walletChainId = walletClient.chain?.id;
+    if (!walletChainId) {
+      setPaymentError('Unable to determine wallet network. Please reconnect your wallet.');
+      setIsProcessingPayment(false);
+      return;
+    }
+    if (walletChainId !== targetNetwork.chainId) {
+      setPaymentError(`Network mismatch detected between your wallet (${walletChainId}) and target network (${targetNetwork.name}). Please switch your wallet to ${targetNetwork.name} to proceed with the payment.`);
+      setIsProcessingPayment(false);
+      return;
+    }
 
-      // Get contract address for the network
-      const contractAddress = getTokenContractAddress(paymentData.currency, paymentData.paymentNetwork);
-      if (!contractAddress) {
-        setPaymentError(`${paymentData.currency} contract not configured for network: ${paymentData.paymentNetwork}`);
-        setIsProcessingPayment(false);
-        return;
-      }
-
-      // Setup contract
-      const contract = {
-        address: contractAddress,
-        abi: erc20Abi,
-      };
-
-      // Convert amount to token units
-      const tokenDecimals = getCryptocurrencyDecimals(paymentData.currency);
-      const tokenAmount = parseUnits(paymentData.amount, tokenDecimals);
-
-      // Get the wallet's current chain ID
-      const walletChainId = walletClient.chain?.id;
-      const targetNetwork = getNetwork(paymentData.paymentNetwork);
-      
-      // Check if wallet is connected to the correct network
-      if (!targetNetwork) {
-        setPaymentError(`Unsupported network: ${paymentData.paymentNetwork}`);
-        setIsProcessingPayment(false);
-        return;
-      }
-
-      if (walletChainId !== targetNetwork.chainId) {
-        console.log('Network mismatch detected:', {
-          walletChainId,
-          targetChainId: targetNetwork.chainId,
-          targetNetwork: paymentData.paymentNetwork
-        });
-        setPaymentError(`Please switch your wallet to ${targetNetwork.name} (Chain ID: ${targetNetwork.chainId}) to proceed with the payment.`);
-        setIsProcessingPayment(false);
-        return;
-      }
-
-      console.log('Network validation passed:', {
-        walletChainId,
-        targetNetwork: paymentData.paymentNetwork
-      });
-
-      // Simulate transaction
-      const { request } = await publicClient.simulateContract({
-        ...contract,
-        functionName: 'transfer',
-        args: [paymentData.receiverWalletAddress as `0x${string}`, tokenAmount],
-        account: primaryWallet.address as `0x${string}`,
-      });
-
-      // Send transaction
-      const hash = await walletClient.writeContract(request);
-      setTxHash(hash);
-      console.log('Transaction sent, hash:', hash);
-
-      // Wait for confirmation
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // TODO: Implement retries with exponential backoff
-      const receipt = await publicClient.getTransactionReceipt({ hash });
-      console.log('Transaction receipt:', receipt);
-
-      // Get block timestamp
-      const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
-      const paidAt = new Date(Number(block.timestamp) * 1000);
-      setPaidAt(paidAt);
-      console.log('Block timestamp:', paidAt);
-
-      // Validate amount conversions
-      const amountNum = parseFloat(paymentData.amount);
-      
-      if (isNaN(amountNum)) {
-        throw new Error('Invalid amount format - amounts must be valid numbers');
-      }
-      
-      if (amountNum <= 0) {
-        throw new Error('Invalid amount - amounts must be greater than zero');
-      }
-
-      // Record payment in database
-      const paymentDataToSubmit = {
+    // Build and validate Payment record
+    let pendingPaymentDataToSubmit: CreatePaymentInput;
+    try {
+      pendingPaymentDataToSubmit = {
         vendor_id: selectedVendor.id,
         invoice_id: invoice?.id || null,
         invoice_number: paymentData.invoiceNumber?.trim() || null,
         invoice_date: paymentData.invoiceDate? new Date(paymentData.invoiceDate).toISOString() : null,
         due_date: paymentData.dueDate? new Date(paymentData.dueDate).toISOString() : null,
         amount: amountNum,
-        currency: paymentData.currency,
+        currency: paymentData.currency as SupportedCurrency,
         sender_wallet_address: primaryWallet.address,
         receiver_wallet_address: paymentData.receiverWalletAddress,
-        payment_network: paymentData.paymentNetwork,
-        tx_hash: hash,
-        paid_date: paidAt.toISOString(),
+        payment_network: paymentData.paymentNetwork as SupportedNetwork,
         memo: paymentData.memo?.trim() || null,
         category_id: selectedCategory?.id || null,
         department_id: null,
+        status: 'PENDING',
       };
-      console.log('Payment data to submit:', paymentDataToSubmit);
-      const parsedPayment = createPaymentInputSchema.safeParse(paymentDataToSubmit);
-
-      if (!parsedPayment.success) {
-        alert(parsedPayment.error.message);
+      const parsedPendingPayment = createPaymentInputSchema.safeParse(pendingPaymentDataToSubmit);
+      if (!parsedPendingPayment.success) {
+        setPaymentError(parsedPendingPayment.error.message);
+        setIsProcessingPayment(false);
         return;
       }
+    } catch (error: unknown) {
+      console.error('Error creating payment:', error);
+      setPaymentError(error instanceof Error ? error.message : "Failed to build payment.");
+      setIsProcessingPayment(false);
+      return;
+    }
 
-      const response = await fetch('/api/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(parsedPayment.data),
+    let request: WriteContractParameters;
+    try {
+      const result = await publicClient.simulateContract({
+        ...contract,
+        functionName: 'transfer',
+        args: [paymentData.receiverWalletAddress as `0x${string}`, tokenAmount],
+        account: primaryWallet.address as `0x${string}`,
       });
+      request = result.request;
+    } catch (error: unknown) {
+      console.error('Error simulating transaction:', error);
+      setPaymentError(formatTxnError(error, paymentData.currency));
+      setIsProcessingPayment(false);
+      return;
+    }
 
+    // Record pending payment 
+    // PENDING = User intent exists, but no funds moved
+    let paymentId: string;
+    try {
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(pendingPaymentDataToSubmit),
+      });
+    
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to record payment');
+        throw new Error(errorData.error || "Failed to record payment");
       }
-
+    
       const data = await response.json();
-      console.log('Payment record created:', data);
-      
-      setPaymentSuccess(true);
-      setShowCompleted(true);
-      
-      // Don't call onPaymentSuccess here - let user see CompletedPayment first
+      console.log('Pending payment record created');
+      paymentId = data.id;
     } catch (error: unknown) {
-      console.error('Payment failed:', error);
-      
-      // Parse error message for user-friendly display
-      let errorMessage = 'Payment failed';
-      
-      if (error instanceof Error) {
-        const errorText = error.message;
-        
-        // Handle specific contract errors
-        if (errorText.includes('transfer amount exceeds balance')) {
-          errorMessage = `Insufficient ${paymentData.currency} balance in your wallet. Please add more funds and try again.`;
-        } else if (errorText.includes('ERC20: transfer to the zero address')) {
-          errorMessage = 'Invalid recipient address. Please check the wallet address and try again.';
-        } else if (errorText.includes('ERC20: approve to the zero address')) {
-          errorMessage = 'Invalid token approval. Please try again.';
-        } else if (errorText.includes('User rejected the request') || errorText.includes('user rejected transaction')) {
-          errorMessage = 'Transaction was cancelled. Please try again when ready.';
-        } else if (errorText.includes('insufficient funds for gas')) {
-          errorMessage = 'Insufficient ETH for gas fees. Please add ETH to your wallet and try again.';
-        } else if (errorText.includes('nonce too low') || errorText.includes('replacement transaction underpriced')) {
-          errorMessage = 'Transaction conflict detected. Please wait a moment and try again.';
-        } else if (errorText.includes('network')) {
-          errorMessage = 'Network error. Please check your connection and try again.';
-        } else {
-          // For other errors, use the original message but clean it up
-          errorMessage = errorText;
-        }
-      }
-      
-      setPaymentError(errorMessage);
-    } finally {
+      console.error('Error recording payment:', error);
+      setPaymentError(`Failed to record payment: ${error}`);
       setIsProcessingPayment(false);
+      return;
     }
+
+    // Send transaction
+    let hash: `0x${string}`;
+    try {
+      hash = await walletClient.writeContract(request);
+      setTxHash(hash);
+    } catch (error: unknown) {
+      // Patch the payment record with FAILED status
+      await fetch(`/api/payments/${paymentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'FAILED' }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      console.error('Failed to send transaction:', error);
+      setPaymentError(`Failed to send transaction: ${formatTxnError(error, paymentData.currency)}\nPlease check your wallet to confirm whether it was sent.`);
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    // Patch the payment record with tx_hash and SUBMITTED status
+    const patchResponse = await fetch(`/api/payments/${paymentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ 
+        tx_hash: hash,
+        status: 'SUBMITTED' // Funds are in-flight, awaiting confirmation
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (!patchResponse.ok) {
+      console.error('Failed to update payment record status to SUBMITTED', patchResponse);
+      setPaymentError(`There was a problem recording your payment. Please check your wallet to confirm whether the payment ${hash} was sent.`);
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    // Confirm transaction
+    try {
+      const receipt = await waitForReceipt(publicClient, hash);
+      const block = await publicClient.getBlock({ blockHash: receipt.blockHash });
+      const paidAt = new Date(Number(block.timestamp) * 1000);
+      setPaidAt(paidAt);
+
+      // Update payment record with paidAt and CONFIRMED status
+      const updateResponse = await fetch(`/api/payments/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          paid_date: paidAt.toISOString(),
+          status: 'CONFIRMED',
+        }),
+      });
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json();
+        console.error('Failed to update payment record status to CONFIRMED', updateResponse);
+        throw new Error(errorData.error || "Failed to update payment");
+      }
+    } catch (error: unknown) {
+      console.error('Error confirming transaction:', error);
+      setPaymentError(`Transaction was submitted, but failed to confirm: ${formatTxnError(error, paymentData.currency)}\nPlease check your wallet to confirm whether it was sent.`);
+      setIsProcessingPayment(false);
+      return;
+    }
+    
+    setPaymentSuccess(true);
+    setShowCompleted(true);
+    setIsProcessingPayment(false);
+    // Don't call onPaymentSuccess here - let user see CompletedPayment first
   };
 
   const handleVendorChange = (vendor: Vendor | null) => {

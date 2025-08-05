@@ -260,6 +260,8 @@ export default function PaymentDetails({ payment, isOpen, onClose }: PaymentDeta
               </div>
             )}
 
+            {/* TODO: If no transaction hash, show a button to manually record the transaction hash before saving. */}
+
             {/* Action Button */}
             <div className="flex justify-end pt-4">
               <Button

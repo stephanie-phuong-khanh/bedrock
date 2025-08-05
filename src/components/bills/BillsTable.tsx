@@ -112,6 +112,9 @@ export default function BillsTable({
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Network
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -136,6 +139,17 @@ export default function BillsTable({
                       <div className="text-sm text-gray-900">
                         {getPaymentNetworkNameFromId(payment.payment_network)}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        payment.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
+                        payment.status === 'SUBMITTED' ? 'bg-yellow-100 text-yellow-800' :
+                        payment.status === 'PENDING' ? 'bg-blue-100 text-blue-800' :
+                        payment.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {payment.status}
+                      </span>
                     </td>
                   </tr>
                 ))}

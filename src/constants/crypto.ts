@@ -53,6 +53,14 @@ export const CRYPTOCURRENCIES: Record<string, CryptoCurrency> = {
     isEnabled: false, // Not yet implemented
   },
 };
+export const SUPPORTED_CURRENCY_SYMBOLS = [
+  'USDC',
+  // 'USDT',
+  // 'DAI',
+  // 'ETH',
+  // 'BTC',
+] as const;
+export type SupportedCurrency = typeof SUPPORTED_CURRENCY_SYMBOLS[number];
 
 // Supported networks with their details
 export const NETWORKS: Record<string, Network> = {
@@ -106,6 +114,17 @@ export const NETWORKS: Record<string, Network> = {
     isEnabled: process.env.NEXT_PUBLIC_ENVIRONMENT === 'development',
   }
 };
+export const SUPPORTED_NETWORK_IDS = [
+  'ethereum',
+  'base',
+  'arbitrum',
+  'optimism',
+  'polygon',
+  'avalanche',
+  'base-sepolia',
+] as const;
+export type SupportedNetwork = typeof SUPPORTED_NETWORK_IDS[number];
+
 
 // Token contract addresses by network
 export const TOKEN_CONTRACTS: Record<string, TokenContracts> = {
